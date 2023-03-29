@@ -119,7 +119,7 @@ def get_args():
     parser.add_argument('--opt', type=str, default='Adam', 
                         choices=['SGD', 'Adam'], 
                         help='optimizer used for training')
-    parser.add_argument('--split_perc', type=float, default=0.8,
+    parser.add_argument('--split_perc', type=float, default=0.7,
                         help='learning rate')
     ###################################################################
 
