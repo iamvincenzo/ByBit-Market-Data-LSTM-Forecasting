@@ -1,10 +1,18 @@
+import os
 import json
+import torch    
 import argparse
+import numpy as np
 import configparser
 import pandas as pd
 from HttpRequest import HTTPRequest
+from torch.utils.data import DataLoader
 from datetime import datetime, timedelta
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+
+from solver import Solver
 from plotting_utils import Visualizer
+from data_utils import CryptoDataset
 
 
 class KlineRequest(HTTPRequest):
@@ -61,19 +69,76 @@ class KlineRequest(HTTPRequest):
         df = pd.concat(df_list)
         
         self.data = df
-        self.save_df_to_csv('./market-data.csv')
+        self.save_df_to_csv('./data/market-data.csv')
 
         return df
+
 
 """ Helper function used to get cmd parameters. """
 def get_args():
     parser = argparse.ArgumentParser()
 
+    # options
     ###################################################################
-    parser.add_argument('--download_data', action='store_true',
+    parser.add_argument('--download_data', action='store_true', #default=True,
                         help='starts an ablation study')
-    parser.add_argument('--plot_data', action='store_true', default=True,
+    parser.add_argument('--plot_data', action='store_true', #default=True,
                         help='starts an ablation study')
+    parser.add_argument('--train_model', action='store_true', default=True,
+                        help='starts an ablation study')
+    ###################################################################
+
+    # model/data infos
+    ###################################################################
+    parser.add_argument('--run_name', type=str,
+                        default="run_0", help='name of current run')
+    parser.add_argument('--model_name', type=str, default="lstm_bybit_analysis",
+                        help='name of the model to be saved/loaded')
+    parser.add_argument('--dataset_path', type=str, default='./data/market-data.csv',
+                        help='path were to save/get the dataset')
+    parser.add_argument('--checkpoint_path', type=str,
+                        default='./model_save', help='path were to save the trained model')
+    parser.add_argument('--resume_train', action='store_true',
+                        help='load the model from checkpoint before training')
+    ###################################################################
+
+    # network-training
+    ###################################################################
+    parser.add_argument('--epochs', type=int, default=500,
+                        help='number of epochs')
+    parser.add_argument('--bs_train', type=int, default=1407, # 16,
+                        help='number of elements in training batch')
+    parser.add_argument('--bs_test', type=int, default=570, #16,
+                        help='number of elements in test batch')
+    parser.add_argument('--workers', type=int, default=2,
+                        help='number of workers in dataloader')
+    parser.add_argument('--early_stopping', type=int, default=5,
+                    help='early stopping epoch treshold')
+    parser.add_argument('--lr', type=float, default=0.001,
+                        help='learning rate')
+    parser.add_argument('--opt', type=str, default='Adam', 
+                        choices=['SGD', 'Adam'], 
+                        help='optimizer used for training')
+    parser.add_argument('--split_perc', type=float, default=0.8,
+                        help='learning rate')
+    ###################################################################
+
+    # network-architecture parameters
+    ###################################################################
+    parser.add_argument('--seq_len', type=int, default=60,
+                        help='number of epochs')
+    parser.add_argument('--hidden_size', type=int, default=2,
+                        help='number of elements in training batch')
+    parser.add_argument('--num_layers', type=int, default=1,
+                        help='number of elements in test batch')
+    parser.add_argument('--output_size', type=int, default=1,
+                        help='number of workers in data loader')
+    ###################################################################
+
+    # output-threshold
+    ###################################################################
+    parser.add_argument('--print_every', type=int, default=1, # 8,
+                    help='print losses every N iteration')
     ###################################################################
 
 
@@ -123,6 +188,7 @@ def main(args):
             df = httpreq.get_kline_bybit()
             print(f'\nDataframe shape: {df.shape}')
             print(f'\n{df.head()}\n')
+
         elif request_type == 'classic':
             limit = config['PARAM']['limit']
 
@@ -154,15 +220,112 @@ def main(args):
             # data = tf.convert_to_tensor(df)
             # print(data)
 
+    elif args.train_model == True:
+        df = pd.read_csv('./data/market-data.csv', index_col='date', parse_dates=True)
+
+        df.drop(['symbol', 'interval', 'open_time',
+                'turnover'], inplace=True, axis=1)
+
+        columns_titles = ['open', 'high', 'low', 'volume', 'close']
+        df = df.reindex(columns=columns_titles)
+
+        X = df.iloc[:, :-1]
+        y = df.iloc[:, -1:]
+
+        train_size = int((len(df) * args.split_perc))
+
+        # data-preprocessing
+        #########################################
+        X_train = X.iloc[:train_size, :]
+
+        y_train = y.iloc[:train_size, :]
+
+        X_test = X.iloc[train_size:, :]
+        y_test = y.iloc[train_size:, :]
+
+        mm = MinMaxScaler()
+        ss = StandardScaler()
+
+        X_train_ss = ss.fit_transform(X_train)
+        y_train_mm = mm.fit_transform(y_train)
+
+        X_test_ss = ss.transform(X_test)
+        y_test_mm = mm.transform(y_test)
+        ##########################################
+
+        # parameters
+        ###########################
+        input_size = X_train.shape[1]
+        ###########################
+
+        crypto_train_data = CryptoDataset(X_train_ss, y_train_mm, args.seq_len)
+        train_dataloader = DataLoader(crypto_train_data, batch_size=args.bs_train, 
+                                      num_workers=args.workers, shuffle=False)
+        
+        crypto_test_data = CryptoDataset(X_test_ss, y_test_mm, args.seq_len)
+        test_dataloader = DataLoader(crypto_test_data, batch_size=args.bs_test, 
+                                     num_workers=args.workers, shuffle=False)
+        
+        n_items_train = len(crypto_train_data)
+        print(f'\nNumber of items in training-set: {n_items_train}')
+                
+        n_items_test = len(crypto_test_data)
+        print(f'Number of items in test-set: {n_items_test}')
+
+        # hard-coded
+        #############################
+        args.bs_train = n_items_train
+        args.bs_test = n_items_test
+        args.print_every = 1
+        #############################
+
+        """
+        # Debugging
+        #############################################
+        # accediamo ad un singolo elemento del dataset
+        x, y = crypto_train_data[0]
+        print(x.shape)
+        print(y.shape)
+
+        # esempio di utilizzo del dataloader
+        for batch_idx, (data, target) in enumerate(train_dataloader):
+            print("Batch idx {}, input shape {}, target shape {}".format(batch_idx, data.shape, target.shape))
+
+        x, y = crypto_test_data[0]
+        print(x.shape)
+        print(y.shape)
+        
+        for batch_idx, (data, target) in enumerate(test_dataloader):
+            print("Batch idx {}, input shape {}, target shape {}".format(batch_idx, data.shape, target.shape))
+        #############################################
+        """
+
+        """ Specify the device type responsible to load a tensor into memory. """
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(f'\nDevice: {device}')
+
+        # define solver class
+        solver = Solver(args=args, 
+                        device=device, 
+                        input_size=input_size, 
+                        train_dataloader=train_dataloader, 
+                        test_dataloader=test_dataloader)
+        
+        solver.train()
+
     elif args.plot_data == True:
         print('\nPlot data...')
         
         df = pd.read_csv('./market-data.csv', index_col='date') #, parse_dates=True)
-        vz = Visualizer(df)
-        vz.plot_training_data()
+        vz = Visualizer()
+        vz.plot_training_data(df)
+
 
 if __name__ == '__main__':
     args = get_args()
+    if not os.path.isdir(args.checkpoint_path):
+        os.makedirs(args.checkpoint_path)
     print(f'\n{args}')
+    
     main(args)
 
