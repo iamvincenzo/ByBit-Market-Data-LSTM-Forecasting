@@ -163,3 +163,7 @@ class Solver(object):
         print('\nPlotting losses...')
 
         self.vz.plot_loss(avg_train_losses, avg_test_losses)
+
+    """ Helper function to do. """
+    def make_prediction(self):
+        pass

@@ -84,7 +84,9 @@ def get_args():
                         help='starts an ablation study')
     parser.add_argument('--plot_data', action='store_true', #default=True,
                         help='starts an ablation study')
-    parser.add_argument('--train_model', action='store_true', default=True,
+    parser.add_argument('--train_model', action='store_true', #default=True,
+                        help='starts an ablation study')
+    parser.add_argument('--make_prediction', action='store_true', default=True,
                         help='starts an ablation study')
     ###################################################################
 
@@ -220,7 +222,8 @@ def main(args):
             # data = tf.convert_to_tensor(df)
             # print(data)
 
-    elif args.train_model == True:
+    elif (args.train_model == True or 
+          args.make_prediction == True):
         df = pd.read_csv('./data/market-data.csv', index_col='date', parse_dates=True)
 
         df.drop(['symbol', 'interval', 'open_time',
@@ -311,7 +314,11 @@ def main(args):
                         train_dataloader=train_dataloader, 
                         test_dataloader=test_dataloader)
         
-        solver.train()
+        if args.train_model == True:
+            solver.train()
+        elif args.make_prediction == True:
+            args.resume_train = True
+            solver.make_prediction()
 
     elif args.plot_data == True:
         print('\nPlot data...')
