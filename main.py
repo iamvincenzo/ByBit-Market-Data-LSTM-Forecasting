@@ -1,8 +1,10 @@
 import json
+import argparse
 import configparser
 import pandas as pd
 from HttpRequest import HTTPRequest
 from datetime import datetime, timedelta
+from plotting_utils import Visualizer
 
 
 class KlineRequest(HTTPRequest):
@@ -12,6 +14,11 @@ class KlineRequest(HTTPRequest):
         self.symbol = symbol
         self.interval = interval
         self.startTime = startTime
+
+    """ Helper function used to save data locally. """
+    def save_df_to_csv(self, path):
+        self.data = self.data.rename_axis('date')
+        self.data.to_csv(path, index=True)
 
     """ Helper function used to obtain candles data. """
     def get_bybit_bars(self, startTime, endTime):
@@ -52,80 +59,110 @@ class KlineRequest(HTTPRequest):
             last_datetime = max(new_df.index) + timedelta(0, 1)
 
         df = pd.concat(df_list)
+        
+        self.data = df
+        self.save_df_to_csv('./market-data.csv')
 
         return df
 
+""" Helper function used to get cmd parameters. """
+def get_args():
+    parser = argparse.ArgumentParser()
+
+    ###################################################################
+    parser.add_argument('--download_data', action='store_true',
+                        help='starts an ablation study')
+    parser.add_argument('--plot_data', action='store_true', default=True,
+                        help='starts an ablation study')
+    ###################################################################
+
+
+    return parser.parse_args()
+
 
 """ Main method used to run the simulation. """
-def main():
-    ########################## CONFIG-INFO ##########################
-    config = configparser.ConfigParser()
-    config.read('api_config.cfg')
-    api_key = config['BYBIT']['api_key']
-    api_secret = config['BYBIT']['api_secret']
+def main(args):
+    print('\nExectuion of main function...')
 
-    config = configparser.ConfigParser()
-    config.read('net_config.cfg')
-    url = config['URL']['url']
-    endpoint = config['ENDPOINT']['endpoint']
+    if args.download_data == True:
+        print('\nDownload data...')
 
-    request_type = config['REQUEST']['request_type']
-    symbol = config['PARAM']['symbol']
-    interval = config['PARAM']['interval']
+        ########################## CONFIG-INFO ##########################
+        config = configparser.ConfigParser()
+        config.read('api_config.cfg')
+        api_key = config['BYBIT']['api_key']
+        api_secret = config['BYBIT']['api_secret']
 
-    method = config['METHOD']['method']
-    #################################################################
+        config = configparser.ConfigParser()
+        config.read('net_config.cfg')
+        url = config['URL']['url']
+        endpoint = config['ENDPOINT']['endpoint']
 
-    if request_type == 'kline':
-        last_datetime = config['LASTDATETIME']['last_datetime']
-        datetime_object = datetime.strptime(last_datetime, '%d/%m/%y %H:%M:%S')
+        request_type = config['REQUEST']['request_type']
+        symbol = config['PARAM']['symbol']
+        interval = config['PARAM']['interval']
 
-        # define the query parameters for the API request
-        params = {
-            'symbol': symbol,
-            'interval': interval,
-            'from': None,
-            'to': None
-        }
+        method = config['METHOD']['method']
+        #################################################################
 
-        httpreq = KlineRequest(symbol, interval, datetime_object, 
-                               url, endpoint, method, params, api_key, api_secret, '\nKline-demo-test')
+        if request_type == 'kline':
+            last_datetime = config['LASTDATETIME']['last_datetime']
+            datetime_object = datetime.strptime(last_datetime, '%d/%m/%y %H:%M:%S')
 
-        df = httpreq.get_kline_bybit()
-        print(f'\nDataframe shape: {df.shape}')
-        print(f'\n{df.head()}\n')
+            # define the query parameters for the API request
+            params = {
+                'symbol': symbol,
+                'interval': interval,
+                'from': None,
+                'to': None
+            }
 
-    elif request_type == 'classic':
-        limit = config['PARAM']['limit']
+            httpreq = KlineRequest(symbol, interval, datetime_object, 
+                                url, endpoint, method, params, api_key, api_secret, '\nKline-demo-test')
 
-        # define the query parameters for the API request
-        params = {
-            'symbol': symbol,
-            'interval': interval,
-            'limit': int(limit)
-        }
+            df = httpreq.get_kline_bybit()
+            print(f'\nDataframe shape: {df.shape}')
+            print(f'\n{df.head()}\n')
+        elif request_type == 'classic':
+            limit = config['PARAM']['limit']
 
-        Info = '\nGeneric-Request-Demo-Test'
+            # define the query parameters for the API request
+            params = {
+                'symbol': symbol,
+                'interval': interval,
+                'limit': int(limit)
+            }
 
-        # class-object creation
-        httpreq = HTTPRequest(url, endpoint, method, params, api_key, api_secret, Info)
+            Info = '\nGeneric-Request-Demo-Test'
 
-        # method invocation - makes the request for data
-        response = httpreq.HTTP_Request()
-        # print(response.text)
+            # class-object creation
+            httpreq = HTTPRequest(url, endpoint, method, params, api_key, api_secret, Info)
 
-        # manipulate data to be analized
-        data = json.loads(response.content)['result']['list']
-        df = pd.DataFrame(data, columns=['A', 'B', 'C', 'D', 'E'], dtype=float)
+            # method invocation - makes the request for data
+            response = httpreq.HTTP_Request()
+            # print(response.text)
 
-        # print some info
-        print(f'\nDataframe shape: {df.shape}')
-        print(f'\n{df.head()}\n')
+            # manipulate data to be analized
+            data = json.loads(response.content)['result']['list']
+            df = pd.DataFrame(data, columns=['A', 'B', 'C', 'D', 'E'], dtype=float)
 
-        # # convert the pandas object to a tensor
-        # data = tf.convert_to_tensor(df)
-        # print(data)
+            # print some info
+            print(f'\nDataframe shape: {df.shape}')
+            print(f'\n{df.head()}\n')
 
+            # # convert the pandas object to a tensor
+            # data = tf.convert_to_tensor(df)
+            # print(data)
+
+    elif args.plot_data == True:
+        print('\nPlot data...')
+        
+        df = pd.read_csv('./market-data.csv', index_col='date') #, parse_dates=True)
+        vz = Visualizer(df)
+        vz.plot_training_data()
 
 if __name__ == '__main__':
-    main()
+    args = get_args()
+    print(f'\n{args}')
+    main(args)
+

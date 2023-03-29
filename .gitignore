@@ -129,3 +129,5 @@ dmypy.json
 .pyre/
 
 api_config.cfg
+
+market-data.csv
