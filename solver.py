@@ -5,7 +5,6 @@ from tqdm import tqdm
 import torch.nn as nn
 import torch.optim as optim
 
-from model import LSTM1
 from model import LSTMModel
 from plotting_utils import Visualizer
 from pytorchtools import EarlyStopping
@@ -24,7 +23,8 @@ class Solver(object):
 
         self.vz = Visualizer()
 
-        """ # Model definition: non va bene con num-layers=4 perchè occorre reshape
+        """ from model import LSTM1
+        # Model definition: non va bene con num-layers=4 perchè occorre reshape
         self.model = LSTM1(self.device, self.args.output_size, self.input_size, 
                            self.args.hidden_size, self.args.num_layers, self.args.seq_len).to(self.device)
         """
@@ -87,8 +87,6 @@ class Solver(object):
             loop = tqdm(enumerate(self.train_dataloader),
                         total=len(self.train_dataloader), leave=True)
             
-            # print(f'\nEpoch {epoch + 1}/{self.args.epochs}\n')
-
             for batch_idx, (X_batch, y_batch) in loop:
                 X_batch = X_batch.to(self.device)
                 y_batch = y_batch.to(self.device) 
