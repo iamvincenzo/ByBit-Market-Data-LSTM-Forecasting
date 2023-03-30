@@ -56,9 +56,6 @@ class Visualizer(object):
         plt.show()
     """
 
-
-
-
 # def __init__(self) #, train_data, valid_data, train_loss, valid_loss): #, train_metric, valid_metric, predictions):
 #         # self.train_data = train_data
 #         # self.valid_data = valid_data
