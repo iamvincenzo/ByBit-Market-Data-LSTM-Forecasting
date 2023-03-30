@@ -13,7 +13,7 @@ class CryptoDataset(Dataset):
         """ The target shape is [bs, 1] and not [bs, seq_len] because the LSTM model is being trained to 
             predict a single value, i.e., the next closing price of the cryptocurrency, given a sequence 
             of historical prices. """
-        y = torch.FloatTensor(np.array(self.y_data[index + self.sequence_len]))
+        y = torch.FloatTensor(np.array(self.y_data[index + self.sequence_len - 1]))
         
         return X, y
 

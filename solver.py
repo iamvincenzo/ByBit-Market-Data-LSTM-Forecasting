@@ -23,6 +23,8 @@ class Solver(object):
 
         self.vz = Visualizer()
 
+        self.set_seed(42)
+
         """ from model import LSTM1
         # Model definition: non va bene con num-layers=4 perchè occorre reshape
         self.model = LSTM1(self.device, self.args.output_size, self.input_size, 
@@ -34,6 +36,9 @@ class Solver(object):
                                self.args.num_layers, self.args.output_size).to(self.device)
         
         print(f'\nNetwork:\n\n {self.model}\n')
+
+        for name, p in self.model.named_parameters():
+            print('%-32s %s' % (name, tuple(p.shape)))
 
         # load a pretrained model
         if self.args.resume_train == True:
@@ -49,6 +54,11 @@ class Solver(object):
         elif self.args.opt == "Adam":
             self.optimizer = optim.Adam(self.model.parameters(), 
                                         lr=self.args.lr, betas=(0.9, 0.999))
+
+    """ Helper function. """
+    def set_seed(self, seed=42):
+        np.random.seed(seed)
+        torch.manual_seed(seed)
 
     """ Helper function used to save the model. """
     def save_model(self):
@@ -74,7 +84,8 @@ class Solver(object):
 
         check_path = os.path.join(self.args.checkpoint_path, self.model_name)
         # initialize the early_stopping object
-        early_stopping = EarlyStopping(patience=7, verbose=True, path=check_path)
+        early_stopping = EarlyStopping(patience=self.args.early_stopping, 
+                                       verbose=True, path=check_path)
         early_stp = False
 
         self.model.train()

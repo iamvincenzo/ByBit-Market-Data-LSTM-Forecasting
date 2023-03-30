@@ -17,6 +17,7 @@ from torch.autograd import Variable
 
 # non buona perchè devo prevedere un prezzo e non ha senso usare la funzione di attivazione
 class LSTM1(nn.Module):
+    """ Initialize configurations. """
     def __init__(self, device, num_classes, input_size, hidden_size, num_layers, seq_length):
         super(LSTM1, self).__init__()
         self.device = device
@@ -30,9 +31,32 @@ class LSTM1(nn.Module):
                           num_layers=num_layers, batch_first=True) #lstm
         self.fc_1 = nn.Linear(hidden_size, 128) #fully connected 1
         self.fc = nn.Linear(128, num_classes) #fully connected last layer
-
         self.relu = nn.ReLU()
+        self._reinitialize()
 
+    """ Tensorflow/Keras-like initialization. """
+    def _reinitialize(self):    
+        print('\nPerforming weights initialization...')
+        for name, p in self.named_parameters():
+            if 'lstm' in name:
+                if 'weight_ih' in name:
+                    nn.init.xavier_uniform_(p.data)
+                elif 'weight_hh' in name:
+                    nn.init.orthogonal_(p.data)
+                elif 'bias_ih' in name:
+                    p.data.fill_(0)
+                    # Set forget-gate bias to 1
+                    n = p.size(0)
+                    p.data[(n // 4):(n // 2)].fill_(1)
+                elif 'bias_hh' in name:
+                    p.data.fill_(0)
+            elif 'fc' in name:
+                if 'weight' in name:
+                    nn.init.xavier_uniform_(p.data)
+                elif 'bias' in name:
+                    p.data.fill_(0)
+
+    """ Method used to train the netwrok. """
     def forward(self, x):
         h_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).to(self.device) #hidden state
         c_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).to(self.device) #internal state
@@ -49,10 +73,12 @@ class LSTM1(nn.Module):
         out = self.fc_1(out) #first Dense
         out = self.relu(out) #relu
         out = self.fc(out) #Final Output
+
         return out
     
 # Define the LSTM model
 class LSTMModel(nn.Module):
+    """ Initialize configurations. """
     def __init__(self, device, input_size, hidden_size, num_layers, output_size):
         super(LSTMModel, self).__init__()
         self.device = device
@@ -60,7 +86,31 @@ class LSTMModel(nn.Module):
         self.num_layers = num_layers
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
         self.fc = nn.Linear(hidden_size, output_size)
+        self._reinitialize()
 
+    """ Tensorflow/Keras-like initialization. """
+    def _reinitialize(self):
+        print('\nPerforming weights initialization...')
+        for name, p in self.named_parameters():
+            if 'lstm' in name:
+                if 'weight_ih' in name:
+                    nn.init.xavier_uniform_(p.data)
+                elif 'weight_hh' in name:
+                    nn.init.orthogonal_(p.data)
+                elif 'bias_ih' in name:
+                    p.data.fill_(0)
+                    # Set forget-gate bias to 1
+                    n = p.size(0)
+                    p.data[(n // 4):(n // 2)].fill_(1)
+                elif 'bias_hh' in name:
+                    p.data.fill_(0)
+            elif 'fc' in name:
+                if 'weight' in name:
+                    nn.init.xavier_uniform_(p.data)
+                elif 'bias' in name:
+                    p.data.fill_(0)
+
+    """ Method used to train the netwrok. """    
     def forward(self, x):
         h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #? .to(x.device)
         c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #? .to(x.device)
