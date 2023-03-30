@@ -84,9 +84,9 @@ def get_args():
                         help='starts an ablation study')
     parser.add_argument('--plot_data', action='store_true', #default=True,
                         help='starts an ablation study')
-    parser.add_argument('--train_model', action='store_true', #default=True,
+    parser.add_argument('--train_model', action='store_true', default=True,
                         help='starts an ablation study')
-    parser.add_argument('--make_prediction', action='store_true', default=True,
+    parser.add_argument('--make_prediction', action='store_true', #default=True,
                         help='starts an ablation study')
     ###################################################################
 
@@ -106,7 +106,7 @@ def get_args():
 
     # network-training
     ###################################################################
-    parser.add_argument('--epochs', type=int, default=500,
+    parser.add_argument('--epochs', type=int, default=1000,
                         help='number of epochs')
     parser.add_argument('--bs_train', type=int, default=1407, # 16,
                         help='number of elements in training batch')
@@ -246,8 +246,8 @@ def main(args):
         X_test = X.iloc[train_size:, :]
         y_test = y.iloc[train_size:, :]
 
-        mm = MinMaxScaler()
         ss = StandardScaler()
+        mm = MinMaxScaler()
 
         X_train_ss = ss.fit_transform(X_train)
         y_train_mm = mm.fit_transform(y_train)
@@ -277,8 +277,8 @@ def main(args):
 
         # hard-coded
         #############################
-        args.bs_train = n_items_train
-        args.bs_test = n_items_test
+        args.bs_train = n_items_train // 2
+        args.bs_test = n_items_test // 2
         args.print_every = 1
         #############################
 

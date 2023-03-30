@@ -23,13 +23,13 @@ class Solver(object):
 
         self.vz = Visualizer()
 
-        # Model definition
-        self.model = LSTM1(self.device, self.args.output_size, self.input_size, 
-                           self.args.hidden_size, self.args.num_layers, self.args.seq_len).to(self.device)
-        
         # # Model definition
-        # self.model = LSTMModel(self.device, self.input_size, self.args.hidden_size, 
-        #                        self.args.num_layers, self.args.output_size).to(self.device)
+        # self.model = LSTM1(self.device, self.args.output_size, self.input_size, 
+        #                    self.args.hidden_size, self.args.num_layers, self.args.seq_len).to(self.device)
+        
+        # Model definition
+        self.model = LSTMModel(self.device, self.input_size, self.args.hidden_size, 
+                               self.args.num_layers, self.args.output_size).to(self.device)
 
         # load a pretrained model
         if self.args.resume_train == True:
@@ -52,7 +52,6 @@ class Solver(object):
         check_path = os.path.join(self.args.checkpoint_path, self.model_name)
         torch.save(self.model.state_dict(), check_path)
         print('\nModel saved!\n')
-
 
     """ Helper function used to load the model. """
     def load_model(self, device):
@@ -120,7 +119,7 @@ class Solver(object):
                           f'train-loss: {batch_avg_train_loss:.4f}, ' +
                           f'test-loss: {batch_avg_test_loss:.4f}')
                     
-                    print(f'\nGloabl-step: {epoch * len(self.train_dataloader) + batch_idx}')
+                    # print(f'\nGloabl-step: {epoch * len(self.train_dataloader) + batch_idx}')
 
                     train_losses = []
                     test_losses = []
@@ -136,12 +135,14 @@ class Solver(object):
             if earlystopping:
                 break
         
+        self.save_model()  # save before stop training
         self.plot_results(avg_train_losses, avg_test_losses)
                     
     """ Evaluation of the model. """
     def test(self, test_losses):
-        self.model.eval()  # put net into evaluation mode
+        print('\nStarting the validation...')
 
+        self.model.eval()  # put net into evaluation mode
         # since we're not training, we don't need to calculate the gradients for our outputs
         with torch.no_grad():
             test_loop = tqdm(enumerate(self.test_dataloader),
