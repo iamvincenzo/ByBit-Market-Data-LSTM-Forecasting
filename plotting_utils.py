@@ -9,9 +9,9 @@ class Visualizer(object):
         pass
 
     """ Helper function. """
-    def plot_training_data(self, train_data):               
+    def plot_data(self, data, t):               
         # create a line plot using Plotly
-        fig = px.line(train_data, x=train_data.index, y='close', title='Closing Price')
+        fig = px.line(data, x=data.index, y='close', title='Closing Price: ' + t)
         fig.update_traces(line_color='#5070ff')
         # display the plot
         fig.show()

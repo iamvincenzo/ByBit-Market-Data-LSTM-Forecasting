@@ -23,13 +23,15 @@ class Solver(object):
 
         self.vz = Visualizer()
 
-        # # Model definition
+        # # Model definition: non va bene con num-layers=4 perchè occorre reshape
         # self.model = LSTM1(self.device, self.args.output_size, self.input_size, 
         #                    self.args.hidden_size, self.args.num_layers, self.args.seq_len).to(self.device)
         
         # Model definition
         self.model = LSTMModel(self.device, self.input_size, self.args.hidden_size, 
                                self.args.num_layers, self.args.output_size).to(self.device)
+        
+        print(f'\nNetwork:\n {self.model}\n')
 
         # load a pretrained model
         if self.args.resume_train == True:

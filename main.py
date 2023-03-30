@@ -127,12 +127,12 @@ def get_args():
 
     # network-architecture parameters
     ###################################################################
-    parser.add_argument('--seq_len', type=int, default=60,
+    parser.add_argument('--seq_len', type=int, default=20, #60,
                         help='number of epochs')
     parser.add_argument('--hidden_size', type=int, default=2,
                         help='number of elements in training batch')
-    parser.add_argument('--num_layers', type=int, default=1,
-                        help='number of elements in test batch')
+    parser.add_argument('--num_layers', type=int, default=2,
+                        help='number of stackd LSTM layers')
     parser.add_argument('--output_size', type=int, default=1,
                         help='number of workers in data loader')
     ###################################################################
@@ -246,6 +246,13 @@ def main(args):
         X_test = X.iloc[train_size:, :]
         y_test = y.iloc[train_size:, :]
 
+        # data-visualization
+        ######################################################
+        vz = Visualizer()
+        vz.plot_data(df.iloc[:train_size, :], 'training-data')
+        vz.plot_data(df.iloc[train_size:, :], 'test-data')
+        ######################################################
+
         ss = StandardScaler()
         mm = MinMaxScaler()
 
@@ -277,8 +284,8 @@ def main(args):
 
         # hard-coded
         #############################
-        args.bs_train = n_items_train // 2
-        args.bs_test = n_items_test // 2
+        args.bs_train = n_items_train 
+        args.bs_test = n_items_test
         args.print_every = 1
         #############################
 
@@ -325,7 +332,7 @@ def main(args):
         
         df = pd.read_csv('./market-data.csv', index_col='date') #, parse_dates=True)
         vz = Visualizer()
-        vz.plot_training_data(df)
+        vz.plot_data(df, 'all-data')
 
 
 if __name__ == '__main__':
