@@ -128,10 +128,10 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+data/
+
 model_save/
 
 temp.py
 
 api_config.cfg
-
-market-data.csv

@@ -18,15 +18,6 @@ class Visualizer(object):
 
     """ Helper function. """
     def plot_loss(self, train_loss, valid_loss):
-        # plt.figure(figsize=(10, 5))
-        # plt.plot(train_loss, label='Training Loss')
-        # plt.plot(valid_loss, label='Validation Loss')
-        # plt.title('Training and Validation Loss')
-        # plt.xlabel('Epoch')
-        # plt.ylabel('Loss')
-        # plt.legend()
-        # plt.show()
-
         # visualize the loss as the network trained
         fig = plt.figure(figsize=(10, 8))
         plt.plot(range(1,len(train_loss)+1),train_loss, label='Training Loss')
@@ -38,7 +29,6 @@ class Visualizer(object):
 
         plt.xlabel('epochs')
         plt.ylabel('loss')
-        plt.ylim(0, 0.5) # consistent scale
         plt.xlim(0, len(train_loss)+1) # consistent scale
         plt.grid(True)
         plt.legend()
