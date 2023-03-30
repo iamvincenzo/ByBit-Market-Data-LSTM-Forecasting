@@ -142,9 +142,10 @@ class Solver(object):
             if early_stp:
                 break
 
-            # save the model before stop training if early_stp = False
+            # save at the end of each epoch only if earlystopping = False
             self.save_model()  
         
+        print('\nTraining finished...')
         self.plot_results(avg_train_losses, avg_test_losses)
                     
     """ Evaluation of the model. """
