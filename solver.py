@@ -142,7 +142,9 @@ class Solver(object):
             if early_stp:
                 break
         
-        self.save_model()  # save before stop training
+        if not(early_stp):
+            self.save_model()  # save before stop training
+        
         self.plot_results(avg_train_losses, avg_test_losses)
                     
     """ Evaluation of the model. """
