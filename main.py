@@ -2,7 +2,6 @@ import os
 import json
 import torch    
 import argparse
-import numpy as np
 import configparser
 import pandas as pd
 from HttpRequest import HTTPRequest
