@@ -267,26 +267,26 @@ def main(args):
         input_size = X_train.shape[1]
         ###########################
 
-        # hard-coded
-        #############################
-        args.bs_train = n_items_train 
-        args.bs_test = n_items_test
-        args.print_every = 1
-        #############################
-
-        crypto_train_data = CryptoDataset(X_train_ss, y_train_mm, args.seq_len)
-        train_dataloader = DataLoader(crypto_train_data, batch_size=args.bs_train, 
-                                      num_workers=args.workers, shuffle=False)
-        
+        crypto_train_data = CryptoDataset(X_train_ss, y_train_mm, args.seq_len)       
         crypto_test_data = CryptoDataset(X_test_ss, y_test_mm, args.seq_len)
-        test_dataloader = DataLoader(crypto_test_data, batch_size=args.bs_test, 
-                                     num_workers=args.workers, shuffle=False)
         
         n_items_train = len(crypto_train_data)
         print(f'\nNumber of items in training-set: {n_items_train}')
                 
         n_items_test = len(crypto_test_data)
         print(f'Number of items in test-set: {n_items_test}')
+
+         # hard-coded
+        #############################
+        args.bs_train = n_items_train 
+        args.bs_test = n_items_test
+        args.print_every = 1
+        #############################
+
+        test_dataloader = DataLoader(crypto_test_data, batch_size=args.bs_test, 
+                                     num_workers=args.workers, shuffle=False)
+        train_dataloader = DataLoader(crypto_train_data, batch_size=args.bs_train, 
+                                      num_workers=args.workers, shuffle=False)
 
         """
         # Debugging
