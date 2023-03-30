@@ -8,6 +8,7 @@ import torch.optim as optim
 from model import LSTM1
 from model import LSTMModel
 from plotting_utils import Visualizer
+from pytorchtools import EarlyStopping
 
 class Solver(object):
     """ Initialize configurations. """
@@ -71,8 +72,10 @@ class Solver(object):
         avg_train_losses = []
         avg_test_losses = []
 
-        # trigger for earlystopping
-        earlystopping = False
+        # initialize the early_stopping object
+        check_path = os.path.join(self.args.checkpoint_path, self.model_name)
+        early_stopping = EarlyStopping(patience=5, verbose=True, path=check_path)
+        early_stp = False
 
         self.model.train()
 
@@ -127,15 +130,16 @@ class Solver(object):
                     train_losses = []
                     test_losses = []
 
-                    if epoch > self.args.early_stopping:  # Early stopping with a patience of 1 and a minimum of N epochs
-                        if avg_test_losses[-1] >= avg_test_losses[-2]:
-                            print('\nEarly Stopping Triggered With Patience 1')
-                            self.save_model()  # save before stop training
-                            earlystopping = True
-                    if earlystopping:
+                    # early_stopping needs the validation loss to check if it has decresed, 
+                    # and if it has, it will make a checkpoint of the current model
+                    early_stopping(batch_avg_test_loss, self.model)
+
+                    if early_stopping.early_stop:
+                        print('\nEarly stopping...')
+                        early_stp = True
                         break
 
-            if earlystopping:
+            if early_stp:
                 break
         
         self.save_model()  # save before stop training
