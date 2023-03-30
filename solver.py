@@ -33,7 +33,7 @@ class Solver(object):
         self.model = LSTMModel(self.device, self.input_size, self.args.hidden_size, 
                                self.args.num_layers, self.args.output_size).to(self.device)
         
-        print(f'\nNetwork:\n {self.model}\n')
+        print(f'\nNetwork:\n\n {self.model}\n')
 
         # load a pretrained model
         if self.args.resume_train == True:
@@ -72,8 +72,8 @@ class Solver(object):
         avg_train_losses = []
         avg_test_losses = []
 
-        # initialize the early_stopping object
         check_path = os.path.join(self.args.checkpoint_path, self.model_name)
+        # initialize the early_stopping object
         early_stopping = EarlyStopping(patience=5, verbose=True, path=check_path)
         early_stp = False
 
@@ -141,9 +141,9 @@ class Solver(object):
 
             if early_stp:
                 break
-        
-        if not(early_stp):
-            self.save_model()  # save before stop training
+
+            # save the model before stop training if early_stp = False
+            self.save_model()  
         
         self.plot_results(avg_train_losses, avg_test_losses)
                     

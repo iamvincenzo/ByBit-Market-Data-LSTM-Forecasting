@@ -22,7 +22,7 @@ class Visualizer(object):
         plt.plot(range(1,len(valid_loss)+1),valid_loss,label='Validation Loss')
 
         # find position of lowest validation loss
-        minposs = valid_loss.index(min(valid_loss))+1 
+        minposs = valid_loss.index(min(valid_loss)) + 1 
         plt.axvline(minposs, linestyle='--', color='r',label='Early Stopping Checkpoint')
 
         plt.xlabel('epochs')
