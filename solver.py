@@ -74,7 +74,7 @@ class Solver(object):
 
         check_path = os.path.join(self.args.checkpoint_path, self.model_name)
         # initialize the early_stopping object
-        early_stopping = EarlyStopping(patience=5, verbose=True, path=check_path)
+        early_stopping = EarlyStopping(patience=7, verbose=True, path=check_path)
         early_stp = False
 
         self.model.train()
