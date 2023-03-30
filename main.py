@@ -115,7 +115,7 @@ def get_args():
                         help='number of workers in dataloader')
     parser.add_argument('--early_stopping', type=int, default=5,
                     help='early stopping epoch treshold (patience)')
-    parser.add_argument('--lr', type=float, default=0.01, #0.001,
+    parser.add_argument('--lr', type=float, default=0.1, #0.001,
                         help='learning rate')
     parser.add_argument('--opt', type=str, default='Adam', 
                         choices=['SGD', 'Adam'], 

@@ -17,7 +17,7 @@ class Visualizer(object):
     """ Helper function. """
     def plot_loss(self, train_loss, valid_loss):
         # visualize the loss as the network trained
-        fig = plt.figure(figsize=(10, 8))
+        fig = plt.figure(figsize=(10, 5))
         plt.plot(range(1,len(train_loss)+1),train_loss, label='Training Loss')
         plt.plot(range(1,len(valid_loss)+1),valid_loss,label='Validation Loss')
 
