@@ -75,11 +75,11 @@ class GetDataloader(object):
         n_items_test = len(crypto_test_data)
         print(f'Number of items in test-set: {n_items_test}')
 
-        # # hard-coded
-        # #############################
-        # self.bs_train = n_items_train 
-        # self.bs_test = n_items_test
-        # #############################
+        # hard-coded
+        #############################
+        self.bs_train = n_items_train 
+        self.bs_test = n_items_test
+        #############################
 
         train_dataloader = DataLoader(crypto_train_data, batch_size=self.bs_train, 
                                       num_workers=self.workers, shuffle=False)
