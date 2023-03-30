@@ -267,6 +267,13 @@ def main(args):
         input_size = X_train.shape[1]
         ###########################
 
+        # hard-coded
+        #############################
+        args.bs_train = n_items_train 
+        args.bs_test = n_items_test
+        args.print_every = 1
+        #############################
+
         crypto_train_data = CryptoDataset(X_train_ss, y_train_mm, args.seq_len)
         train_dataloader = DataLoader(crypto_train_data, batch_size=args.bs_train, 
                                       num_workers=args.workers, shuffle=False)
@@ -280,13 +287,6 @@ def main(args):
                 
         n_items_test = len(crypto_test_data)
         print(f'Number of items in test-set: {n_items_test}')
-
-        # hard-coded
-        #############################
-        args.bs_train = n_items_train 
-        args.bs_test = n_items_test
-        args.print_every = 1
-        #############################
 
         """
         # Debugging
