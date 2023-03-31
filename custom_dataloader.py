@@ -29,17 +29,18 @@ class CryptoDataset(Dataset):
 
 class GetDataloader(object):
     """ Initialize configurations. """
-    def __init__(self, X, y, bs_train, bs_test, workers, seq_len, split_perc):
+    def __init__(self, X, y, bs_train, bs_test, max_batch_sz, workers, seq_len, split_perc):
         self.X = X
         self.y = y
         self.bs_train = bs_train
         self.bs_test = bs_test
+        self.max_batch_sz = max_batch_sz
         self.workers = workers
         self.seq_len = seq_len
         self.split_perc = split_perc
 
     """ Helper function. """
-    def get_dataloader(self):
+    def get_dataloaders(self):
         train_size = int((len(self.X) * self.split_perc))
 
         # data-preprocessing
@@ -61,11 +62,6 @@ class GetDataloader(object):
         y_test_mm = mm.transform(y_test)
         ##########################################
 
-        # parameters
-        ###########################
-        input_size = X_train.shape[1]
-        ###########################
-
         crypto_train_data = CryptoDataset(X_train_ss, y_train_mm, self.seq_len)       
         crypto_test_data = CryptoDataset(X_test_ss, y_test_mm, self.seq_len)
         
@@ -77,8 +73,9 @@ class GetDataloader(object):
 
         # hard-coded
         #############################
-        self.bs_train = n_items_train 
-        self.bs_test = n_items_test
+        if self.max_batch_sz == True:
+            self.bs_train = n_items_train
+            self.bs_test = n_items_test
         #############################
 
         train_dataloader = DataLoader(crypto_train_data, batch_size=self.bs_train, 
@@ -87,7 +84,7 @@ class GetDataloader(object):
                                      num_workers=self.workers, shuffle=False)
        
         
-        return train_dataloader, test_dataloader, input_size
+        return train_dataloader, test_dataloader
 
 
 class TimeSeriesSplitDataloader(object):
@@ -107,7 +104,7 @@ class TimeSeriesSplitDataloader(object):
         print(f'n_splits: {self.n_splits}, seq_len: {self.seq_len}')
     
     """ Helper function. """
-    def get_dataloader(self):
+    def get_dataloaders(self):
         for _, (train_index, val_index) in enumerate(self.tscv.split(self.X)):
             X_train, X_val_test = self.X.iloc[train_index], self.X.iloc[val_index]
             y_train, y_val_test = self.y.iloc[train_index], self.y.iloc[val_index]
@@ -117,11 +114,6 @@ class TimeSeriesSplitDataloader(object):
             y_val = y_val_test.iloc[:val_size]
             X_test = X_val_test.iloc[val_size:]
             y_test = y_val_test.iloc[val_size:]
-
-        # parameters
-        ###########################
-        input_size = X_train.shape[1]
-        ###########################
         
         # data-preprocessing
         #########################################
@@ -155,6 +147,6 @@ class TimeSeriesSplitDataloader(object):
         val_dataloader = DataLoader(crypto_val_data, batch_size=self.batch_size, shuffle=False)
         test_dataloader = DataLoader(crypto_test_data, batch_size=self.batch_size, shuffle=False)
 
-        return train_dataloader, val_dataloader, test_dataloader, input_size
+        return train_dataloader, val_dataloader, test_dataloader
 
         

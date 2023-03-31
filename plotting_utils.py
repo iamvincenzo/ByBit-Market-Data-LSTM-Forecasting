@@ -1,5 +1,6 @@
 import plotly.express as px
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 class Visualizer(object):   
     """ Initialize configurations. """
@@ -33,6 +34,21 @@ class Visualizer(object):
         plt.tight_layout()
         plt.show()
         fig.savefig('./data/loss_plot.png', bbox_inches='tight')
+
+    """ Helper function. """
+    def plot_pca(self, data, t):
+        # Perform PCA
+        pca = PCA(n_components=2)
+        X_pca = pca.fit_transform(data)
+
+        # Plot PCA
+        plt.scatter(X_pca[:, 0], X_pca[:, 1])
+        plt.xlabel('PC1')
+        plt.ylabel('PC2')
+        plt.title('PCA of ByBit data')
+        plt.show()
+
+
 
     """ Other functions
     def plot_metric(self):
