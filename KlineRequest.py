@@ -33,7 +33,9 @@ class KlineRequest(HTTPRequest):
         # print(response.text)
         json_response = json.loads(response.text)['result']
 
-        if 'list' in json_response:        
+        if 'list' in json_response:
+            # API-doc: (An string array of individual candle) (Sort in reverse by start)
+            json_response['list'].reverse()
             df = pd.DataFrame(json_response['list'], 
                               columns=['start', 'open', 'high', 'low', 'close'])
 
@@ -46,6 +48,7 @@ class KlineRequest(HTTPRequest):
             return df
         
         else:
+            print('list not in json_response...\n')
             return None
 
     """ Helper function used to obtain a dataframe

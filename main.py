@@ -26,11 +26,11 @@ def get_args():
     ###################################################################
     parser.add_argument('--download_data', action='store_true', #default=True,
                         help='starts an ablation study')
-    parser.add_argument('--train_model', action='store_true', default=True,
+    parser.add_argument('--train_model', action='store_true', #default=True,
                         help='starts an ablation study')
     parser.add_argument('--plot_data', action='store_true', #default=True,
                         help='starts an ablation study')
-    parser.add_argument('--make_prediction', action='store_true', #default=True,
+    parser.add_argument('--make_prediction', action='store_true', default=True,
                         help='starts an ablation study')
     ###################################################################
 
@@ -83,7 +83,7 @@ def get_args():
 
     # output-threshold
     ###################################################################
-    parser.add_argument('--print_every', type=int, default=100,
+    parser.add_argument('--print_every', type=int, default=89,
                         help='print losses every N iteration')
     ###################################################################
 
@@ -163,8 +163,8 @@ def main(args):
             df = pd.DataFrame(data, columns=['A', 'B', 'C', 'D', 'E'], dtype=float)
 
             # print some info
-            print(f'\nDataframe shape: {df.shape}')
-            print(f'\n{df.head()}\n')
+            print(f'\nDataFrame shape: {df.shape}')
+            print(f'\nDataFrame head:\n {df.head()}\n')
 
             # # convert the pandas object to a tensor
             # data = tf.convert_to_tensor(df)
@@ -174,12 +174,7 @@ def main(args):
         print('\nTraining/Prediction...')
         
         df = pd.read_csv('./data/market-data.csv', index_col='date', parse_dates=True)
-
-        # df.drop(['symbol', 'interval', 'open_time', 'turnover'], inplace=True, axis=1)
         df.drop(['start'], inplace=True, axis=1)
-
-        columns_titles = ['open', 'high', 'low', 'volume', 'close']
-        df = df.reindex(columns=columns_titles)
 
         X = df.iloc[:, :-1]
         y = df.iloc[:, -1:]
@@ -215,8 +210,8 @@ def main(args):
             # args.print_every = 1 # if max_batch_sz=True
             train_dataloader, val_dataloader, test_dataloader = tspdl.get_dataloaders()
 
-        """ dataloader-debugging
-        for _, (X, y) in enumerate(test_dataloader):
+        """ # dataloader-debugging
+        for _, (X, y) in enumerate(train_dataloader):
             print(X)
             print(y)
             a = input('...') 
@@ -314,7 +309,7 @@ def main(args):
             solver.train()
         elif args.make_prediction == True:
             args.resume_train = True
-            solver.make_prediction()
+            solver.make_prediction(X)
 
     elif args.plot_data == True:
         print('\nPlotting data...')

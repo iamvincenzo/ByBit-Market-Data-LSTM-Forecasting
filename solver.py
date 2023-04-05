@@ -42,7 +42,7 @@ class Solver(object):
             print('%-32s %s' % (name, tuple(p.shape)))
 
         # load a pretrained model
-        if self.args.resume_train == True:
+        if self.args.resume_train == True or self.args.make_prediction == True:
             self.load_model(device)
         
         # Loss definition
@@ -252,5 +252,6 @@ class Solver(object):
         self.vz.plot_predictions(y_trues, predictions, 'training')
 
     """ Helper function to do. """
-    def make_prediction(self):
-        pass
+    def make_prediction(self, X):
+        
+        print(X)
