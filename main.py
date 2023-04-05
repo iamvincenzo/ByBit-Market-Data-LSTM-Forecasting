@@ -24,13 +24,13 @@ def get_args():
 
     # options
     ###################################################################
-    parser.add_argument('--download_data', action='store_true', #default=True,
+    parser.add_argument('--download_data', action='store_true', default=True,
                         help='starts an ablation study')
     parser.add_argument('--train_model', action='store_true', #default=True,
                         help='starts an ablation study')
     parser.add_argument('--plot_data', action='store_true', #default=True,
                         help='starts an ablation study')
-    parser.add_argument('--make_prediction', action='store_true', default=True,
+    parser.add_argument('--make_prediction', action='store_true', #default=True,
                         help='starts an ablation study')
     ###################################################################
 
