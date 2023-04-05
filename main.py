@@ -58,9 +58,9 @@ def get_args():
                         help='number of elements in test batch')
     parser.add_argument('--workers', type=int, default=2,
                         help='number of workers in dataloader')
-    parser.add_argument('--early_stopping', type=int, default=5,
+    parser.add_argument('--early_stopping', type=int, default=7,
                     help='early stopping epoch treshold (patience)')
-    parser.add_argument('--lr', type=float, default=0.001,
+    parser.add_argument('--lr', type=float, default=0.0001,
                         help='learning rate')
     parser.add_argument('--opt', type=str, default='Adam', 
                         choices=['SGD', 'Adam'], 
@@ -71,11 +71,11 @@ def get_args():
 
     # network-architecture parameters
     ###################################################################
-    parser.add_argument('--seq_len', type=int, default=20, # 60,
+    parser.add_argument('--seq_len', type=int, default=10, # 60,
                         help='number of epochs')
-    parser.add_argument('--hidden_size', type=int, default=32, #128,
+    parser.add_argument('--hidden_size', type=int, default=128,
                         help='number of elements in training batch')
-    parser.add_argument('--num_layers', type=int, default=2,
+    parser.add_argument('--num_layers', type=int, default=2, #2,
                         help='number of stackd LSTM layers')
     parser.add_argument('--output_size', type=int, default=1,
                         help='number of workers in data loader')
@@ -83,7 +83,7 @@ def get_args():
 
     # output-threshold
     ###################################################################
-    parser.add_argument('--print_every', type=int, default=89,
+    parser.add_argument('--print_every', type=int, default=9,
                         help='print losses every N iteration')
     ###################################################################
 
