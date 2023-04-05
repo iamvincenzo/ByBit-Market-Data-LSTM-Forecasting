@@ -19,26 +19,34 @@ class KlineRequest(HTTPRequest):
 
     """ Helper function used to obtain candles data. """
     def get_bybit_bars(self, startTime, endTime):
-        startTime = str(int(startTime.timestamp()))
-        endTime = str(int(endTime.timestamp()))
+
+        print(f'debugg: {startTime}')
+
+        startTime = int(datetime.timestamp(startTime) * 1000)
+        endTime = int(datetime.timestamp(endTime)*1000)
+
+        print(f'debug: {startTime}, {endTime}')
 
         self.params = {
             'symbol': self.symbol,
             'interval': self.interval,
-            'from': startTime,
-            'to': endTime
+            'start': startTime,
+            'end': endTime
         }
 
         response = self.HTTP_Request()
-        # print(response.text)
+        print(response.text)
         
-        df = pd.DataFrame(json.loads(response.text)['result'])
+        df = pd.DataFrame(json.loads(response.text)['result']['list'], columns=['start', 'open', 'high', 'low', 'close'])
+
+        print(df)
+        a = input('...')
 
         if (len(df.index) == 0):
             print('\nNone information...\n')
             return None
 
-        df.index = [datetime.fromtimestamp(x) for x in df.open_time]
+        df.index = [datetime.fromtimestamp(int(x)) for x in df.start]
 
         return df
 
@@ -54,6 +62,7 @@ class KlineRequest(HTTPRequest):
                 break
             df_list.append(new_df)
             last_datetime = max(new_df.index) + timedelta(0, 1)
+            print(f'index: {last_datetime}')
 
         df = pd.concat(df_list)
         

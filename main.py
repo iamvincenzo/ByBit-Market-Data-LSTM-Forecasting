@@ -118,14 +118,16 @@ def main(args):
 
         if request_type == 'kline':
             last_datetime = config['LASTDATETIME']['last_datetime']
-            datetime_object = datetime.strptime(last_datetime, '%d/%m/%y %H:%M:%S')
+            datetime_object = datetime.strptime(last_datetime, '%Y/%m/%d %H:%M:%S')
+            t = int(datetime.timestamp(datetime_object) * 1000)
+            print(t)
 
             # define the query parameters for the API request
             params = {
                 'symbol': symbol,
                 'interval': interval,
-                'from': None,
-                'to': None
+                'start': None,
+                'end': None
             }
 
             httpreq = KlineRequest(symbol, interval, datetime_object, url, endpoint, 
