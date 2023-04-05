@@ -4,73 +4,18 @@ import torch
 import argparse
 import configparser
 import pandas as pd
-from HttpRequest import HTTPRequest
-from torch.utils.data import DataLoader
-from datetime import datetime, timedelta
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+from datetime import datetime
 
 from solver import Solver
+from HttpRequest import HTTPRequest
+from KlineRequest import KlineRequest
 from plotting_utils import Visualizer
-from data_utils import CryptoDataset
+from custom_dataloader import GetDataloader
+from custom_dataloader import TimeSeriesSplitDataloader
 
-
-class KlineRequest(HTTPRequest):
-    """ Initialize configurations. """
-    def __init__(self, symbol, interval, startTime, url, endpoint, method, params, api_key, api_secret, Info):
-        super().__init__(url, endpoint, method, params, api_key, api_secret, Info)
-        self.symbol = symbol
-        self.interval = interval
-        self.startTime = startTime
-
-    """ Helper function used to save data locally. """
-    def save_df_to_csv(self, path):
-        self.data = self.data.rename_axis('date')
-        self.data.to_csv(path, index=True)
-
-    """ Helper function used to obtain candles data. """
-    def get_bybit_bars(self, startTime, endTime):
-        startTime = str(int(startTime.timestamp()))
-        endTime = str(int(endTime.timestamp()))
-
-        self.params = {
-            'symbol': self.symbol,
-            'interval': self.interval,
-            'from': startTime,
-            'to': endTime
-        }
-
-        response = self.HTTP_Request()
-        # print(response.text)
-        
-        df = pd.DataFrame(json.loads(response.text)['result'])
-
-        if (len(df.index) == 0):
-            print('\nNone information...\n')
-            return None
-
-        df.index = [datetime.fromtimestamp(x) for x in df.open_time]
-
-        return df
-
-    """ Helper function used to obtain a dataframe
-        containing cndles market data. """
-    def get_kline_bybit(self):
-        df_list = []
-        last_datetime = self.startTime
-        while True:
-            print(last_datetime)
-            new_df = self.get_bybit_bars(last_datetime, datetime.now())
-            if new_df is None:
-                break
-            df_list.append(new_df)
-            last_datetime = max(new_df.index) + timedelta(0, 1)
-
-        df = pd.concat(df_list)
-        
-        self.data = df
-        self.save_df_to_csv('./data/market-data.csv')
-
-        return df
+# from data_utils import CryptoDataset
+# from torch.utils.data import DataLoader
+# from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 
 """ Helper function used to get cmd parameters. """
@@ -81,9 +26,9 @@ def get_args():
     ###################################################################
     parser.add_argument('--download_data', action='store_true', #default=True,
                         help='starts an ablation study')
-    parser.add_argument('--plot_data', action='store_true', #default=True,
+    parser.add_argument('--train_model', action='store_true', #default=True,
                         help='starts an ablation study')
-    parser.add_argument('--train_model', action='store_true', default=True,
+    parser.add_argument('--plot_data', action='store_true', #default=True,
                         help='starts an ablation study')
     parser.add_argument('--make_prediction', action='store_true', #default=True,
                         help='starts an ablation study')
@@ -107,15 +52,15 @@ def get_args():
     ###################################################################
     parser.add_argument('--epochs', type=int, default=1000,
                         help='number of epochs')
-    parser.add_argument('--bs_train', type=int, default=1407, # 16,
+    parser.add_argument('--bs_train', type=int, default=16,
                         help='number of elements in training batch')
-    parser.add_argument('--bs_test', type=int, default=570, #16,
+    parser.add_argument('--bs_test', type=int, default=16,
                         help='number of elements in test batch')
     parser.add_argument('--workers', type=int, default=2,
                         help='number of workers in dataloader')
-    parser.add_argument('--early_stopping', type=int, default=5,
+    parser.add_argument('--early_stopping', type=int, default=7,
                     help='early stopping epoch treshold (patience)')
-    parser.add_argument('--lr', type=float, default=0.001,
+    parser.add_argument('--lr', type=float, default=0.0001,
                         help='learning rate')
     parser.add_argument('--opt', type=str, default='Adam', 
                         choices=['SGD', 'Adam'], 
@@ -126,9 +71,9 @@ def get_args():
 
     # network-architecture parameters
     ###################################################################
-    parser.add_argument('--seq_len', type=int, default=20, #60,
+    parser.add_argument('--seq_len', type=int, default=60,
                         help='number of epochs')
-    parser.add_argument('--hidden_size', type=int, default=2,
+    parser.add_argument('--hidden_size', type=int, default=128, #2,
                         help='number of elements in training batch')
     parser.add_argument('--num_layers', type=int, default=2,
                         help='number of stackd LSTM layers')
@@ -138,8 +83,8 @@ def get_args():
 
     # output-threshold
     ###################################################################
-    parser.add_argument('--print_every', type=int, default=1, # 8,
-                    help='print losses every N iteration')
+    parser.add_argument('--print_every', type=int, default=3000,
+                        help='print losses every N iteration')
     ###################################################################
 
 
@@ -183,12 +128,15 @@ def main(args):
                 'to': None
             }
 
-            httpreq = KlineRequest(symbol, interval, datetime_object, 
-                                url, endpoint, method, params, api_key, api_secret, '\nKline-demo-test')
+            httpreq = KlineRequest(symbol, interval, datetime_object, url, endpoint, 
+                                   method, params, api_key, api_secret, '\nKline-demo-test')
 
             df = httpreq.get_kline_bybit()
             print(f'\nDataframe shape: {df.shape}')
             print(f'\n{df.head()}\n')
+
+            vz = Visualizer()
+            vz.plot_data(df, 'all-data')
 
         elif request_type == 'classic':
             limit = config['PARAM']['limit']
@@ -221,12 +169,12 @@ def main(args):
             # data = tf.convert_to_tensor(df)
             # print(data)
 
-    elif (args.train_model == True or 
-          args.make_prediction == True):
+    elif (args.train_model == True or args.make_prediction == True):
+        print('\nTraining/Prediction...')
+        
         df = pd.read_csv('./data/market-data.csv', index_col='date', parse_dates=True)
 
-        df.drop(['symbol', 'interval', 'open_time',
-                'turnover'], inplace=True, axis=1)
+        df.drop(['symbol', 'interval', 'open_time', 'turnover'], inplace=True, axis=1)
 
         columns_titles = ['open', 'high', 'low', 'volume', 'close']
         df = df.reindex(columns=columns_titles)
@@ -234,6 +182,44 @@ def main(args):
         X = df.iloc[:, :-1]
         y = df.iloc[:, -1:]
 
+        # parameters
+        ###########################
+        input_size = X.shape[1]
+        ###########################
+
+        # # data-visualization
+        # ######################################################
+        # vz = Visualizer()
+        # train_size = int((len(df) * args.split_perc))
+        # vz.plot_data(df.iloc[:train_size, :], 'training-data')
+        # vz.plot_data(df.iloc[train_size:, :], 'test-data')
+        # vz.plot_pca(df.iloc[:train_size, :], 'training-data')
+        # vz.plot_pca(df.iloc[train_size:, :], 'test-data')
+        # ######################################################
+
+        data_timeseries = True
+
+        if data_timeseries == False:
+            getData = GetDataloader(X=X, y=y, bs_train=args.bs_train, bs_test=args.bs_test, 
+                                    max_batch_sz=False, workers=args.workers, 
+                                    seq_len=args.seq_len, split_perc=args.split_perc)
+            # args.print_every = 1 # if max_batch_sz=True
+            train_dataloader, val_dataloader = getData.get_dataloaders()
+            test_dataloader = None
+        else:
+            tspdl = TimeSeriesSplitDataloader(X=X, y=y, seq_len=args.seq_len, max_batch_sz=False, 
+                                              batch_size=args.bs_train, val_test_split=0.5)
+            # args.print_every = 1 # if max_batch_sz=True
+            train_dataloader, val_dataloader, test_dataloader = tspdl.get_dataloaders()
+
+        """ dataloader-debugging
+        for _, (X, y) in enumerate(test_dataloader):
+            print(X)
+            print(y)
+            a = input('...') 
+        """
+
+        """ OLD
         train_size = int((len(df) * args.split_perc))
 
         # data-preprocessing
@@ -248,6 +234,7 @@ def main(args):
         # data-visualization
         ######################################################
         vz = Visualizer()
+        train_size = int((len(df) * args.split_perc))
         vz.plot_data(df.iloc[:train_size, :], 'training-data')
         vz.plot_data(df.iloc[train_size:, :], 'test-data')
         ######################################################
@@ -287,8 +274,7 @@ def main(args):
                                      num_workers=args.workers, shuffle=False)
         train_dataloader = DataLoader(crypto_train_data, batch_size=args.bs_train, 
                                       num_workers=args.workers, shuffle=False)
-
-        """
+        
         # Debugging
         #############################################
         # accediamo ad un singolo elemento del dataset
@@ -318,6 +304,7 @@ def main(args):
                         device=device, 
                         input_size=input_size, 
                         train_dataloader=train_dataloader, 
+                        val_dataloader=val_dataloader,
                         test_dataloader=test_dataloader)
         
         if args.train_model == True:
@@ -327,9 +314,9 @@ def main(args):
             solver.make_prediction()
 
     elif args.plot_data == True:
-        print('\nPlot data...')
+        print('\nPlotting data...')
         
-        df = pd.read_csv('./market-data.csv', index_col='date') #, parse_dates=True)
+        df = pd.read_csv(args.dataset_path, index_col='date') #, parse_dates=True)
         vz = Visualizer()
         vz.plot_data(df, 'all-data')
 

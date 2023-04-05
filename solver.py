@@ -11,7 +11,7 @@ from pytorchtools import EarlyStopping
 
 class Solver(object):
     """ Initialize configurations. """
-    def __init__(self, args, device, input_size, train_dataloader, test_dataloader):
+    def __init__(self, args, device, input_size, train_dataloader, val_dataloader, test_dataloader=None):
         super(Solver, self).__init__()
         self.args = args
         self.model_name = f'{self.args.model_name}.pth'        
@@ -19,6 +19,7 @@ class Solver(object):
         self.device = device
         self.input_size = input_size
         self.train_dataloader = train_dataloader
+        self.val_dataloader= val_dataloader
         self.test_dataloader = test_dataloader
 
         self.vz = Visualizer()
@@ -82,6 +83,9 @@ class Solver(object):
         avg_train_losses = []
         avg_test_losses = []
 
+        train_y_trues = np.array([], dtype=np.float64)
+        train_preds = np.array([], dtype=np.float64)
+
         check_path = os.path.join(self.args.checkpoint_path, self.model_name)
         # initialize the early_stopping object
         early_stopping = EarlyStopping(patience=self.args.early_stopping, 
@@ -118,6 +122,9 @@ class Solver(object):
                 self.optimizer.step()
 
                 train_losses.append(loss.item())
+
+                train_y_trues = np.concatenate((y_batch.detach().numpy(), train_y_trues), axis=None)
+                train_preds = np.concatenate((y_pred.detach().numpy(), train_preds), axis=None)
         
                 if batch_idx % self.args.print_every == self.args.print_every - 1:                    
                     # used to check model improvement
@@ -134,6 +141,8 @@ class Solver(object):
                           f'train-loss: {batch_avg_train_loss:.4f}, ' +
                           f'test-loss: {batch_avg_test_loss:.4f}')
                     
+                    self.plot_results(avg_train_losses, avg_test_losses, train_y_trues, train_preds)
+                    
                     # print(f'\nGloabl-step: {epoch * len(self.train_dataloader) + batch_idx}')
 
                     train_losses = []
@@ -142,6 +151,15 @@ class Solver(object):
                     # early_stopping needs the validation loss to check if it has decresed, 
                     # and if it has, it will make a checkpoint of the current model
                     early_stopping(batch_avg_test_loss, self.model)
+
+                    # evaluation on test-set
+                    if self.test_dataloader is not None:
+                         eval_loss, eval_metric = self.evaluate_on_test_set()
+                         
+                         print(f'\nEpoch: {epoch + 1}/{self.args.epochs}, ' + 
+                               f'Batch: {batch_idx + 1}/{len(self.train_dataloader)}, ' +
+                               f'eval_loss: {eval_loss:.4f}, ' +
+                               f'eval_metric: {eval_metric:.4f}')
 
                     if early_stopping.early_stop:
                         print('\nEarly stopping...')
@@ -155,34 +173,83 @@ class Solver(object):
             self.save_model()  
         
         print('\nTraining finished...')
-        self.plot_results(avg_train_losses, avg_test_losses)
+        self.plot_results(avg_train_losses, avg_test_losses, train_y_trues, train_preds) # ???
                     
     """ Evaluation of the model. """
     def test(self, test_losses):
         print('\nStarting the validation...')
 
+        val_y_trues = np.array([], dtype=np.float64)
+        val_preds = np.array([], dtype=np.float64)
+
         self.model.eval()  # put net into evaluation mode
         # since we're not training, we don't need to calculate the gradients for our outputs
         with torch.no_grad():
-            test_loop = tqdm(enumerate(self.test_dataloader),
-                             total=len(self.test_dataloader), leave=True)
+            test_loop = tqdm(enumerate(self.val_dataloader),
+                             total=len(self.val_dataloader), leave=True)
 
             for _, (X_test, y_test) in test_loop:
                 X_test = X_test.to(self.device)
                 y_test = y_test.to(self.device)
                 y_test_pred = self.model(X_test.detach())
 
-                test_loss = self.criterion(y_test_pred, y_test).item()     
+                val_y_trues = np.concatenate((y_test.detach().numpy(), val_y_trues), axis=None)
+                val_preds = np.concatenate((y_test_pred.detach().numpy(), val_preds), axis=None)
 
-                test_losses.append(test_loss)           
+                test_loss = self.criterion(y_test_pred, y_test)     
+
+                test_losses.append(test_loss.item())
+
+            self.vz.plot_predictions(val_y_trues, val_preds, 'validation')           
     
         self.model.train()  # put again the model in trainining-mode
 
+    """ Helper function used to evaluate the model in test set. """
+    def evaluate_on_test_set(self):
+        print('\nEvaluation on test set...')
+
+        eval_y_trues = np.array([], dtype=np.float64)
+        eval_preds = np.array([], dtype=np.float64)
+
+        self.model.eval()
+
+        with torch.no_grad():
+            eval_losses = []
+            metrics = []
+
+            eval_loop = tqdm(enumerate(self.test_dataloader),
+                             total=len(self.test_dataloader), leave=True)
+
+            for _, (X_eval, y_eval) in eval_loop:
+                X_eval = X_eval.to(self.device)
+                y_eval = y_eval.to(self.device)
+                y_eval_pred = self.model(X_eval.detach())
+
+                eval_y_trues = np.concatenate((y_eval.detach().numpy(), eval_y_trues), axis=None)
+                eval_preds = np.concatenate((y_eval_pred.detach().numpy(), eval_preds), axis=None)
+
+                eval_loss = self.criterion(y_eval_pred, y_eval)                
+                metric = torch.sqrt(eval_loss)     
+
+                eval_losses.append(eval_loss.item())
+                metrics.append(metric.item())
+
+            avg_loss = np.average(eval_losses)
+            avg_metric = np.average(metrics)
+
+            self.vz.plot_predictions(eval_y_trues, eval_preds, 'evaluation')
+        
+        self.model.train()
+
+        return avg_loss, avg_metric
+
     """ Helper function used to plot some results. """
-    def plot_results(self, avg_train_losses, avg_test_losses):
+    def plot_results(self, avg_train_losses, avg_test_losses, y_trues, predictions):
         print('\nPlotting losses...')
 
         self.vz.plot_loss(avg_train_losses, avg_test_losses)
+
+        self.vz.plot_predictions(y_trues, predictions, 'training')
 
     """ Helper function to do. """
     def make_prediction(self):

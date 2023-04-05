@@ -89,11 +89,12 @@ class GetDataloader(object):
 
 class TimeSeriesSplitDataloader(object):
     """ Initialize configurations. """
-    def __init__(self, X, y, seq_len, batch_size=64, val_test_split=0.5):
+    def __init__(self, X, y, seq_len, max_batch_sz, batch_size=64, val_test_split=0.5):
         self.X = X
         self.y = y
         self.seq_len = seq_len
         self.batch_size = batch_size
+        self.max_batch_sz = max_batch_sz
         self.val_test_split = val_test_split
 
         tscv = TimeSeriesSplit()
@@ -101,7 +102,7 @@ class TimeSeriesSplitDataloader(object):
 
         self.tscv = TimeSeriesSplit(n_splits=self.n_splits)
         
-        print(f'n_splits: {self.n_splits}, seq_len: {self.seq_len}')
+        print(f'\nTimeSeriesSplit parameters: n_splits: {self.n_splits}, seq_len: {self.seq_len}')
     
     """ Helper function. """
     def get_dataloaders(self):
@@ -142,6 +143,9 @@ class TimeSeriesSplitDataloader(object):
 
         n_items_test = len(crypto_test_data)
         print(f'Number of items in test-set: {n_items_test}')
+
+        if self.max_batch_sz == True:
+            self.batch_size = n_items_train
 
         train_dataloader = DataLoader(crypto_train_data, batch_size=self.batch_size, shuffle=False)
         val_dataloader = DataLoader(crypto_val_data, batch_size=self.batch_size, shuffle=False)

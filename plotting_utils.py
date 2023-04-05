@@ -15,6 +15,16 @@ class Visualizer(object):
         # display the plot
         fig.show()
 
+    def plot_predictions(self, y_true, predictions, t):
+        plt.figure(figsize=(10, 5))
+        plt.plot(y_true, label='Actual Price')
+        plt.plot(predictions, label='Predicted Price')
+        plt.title('Actual vs. Predicted Price (' + t + ')')
+        plt.xlabel('Date')
+        plt.ylabel('Price ($)')
+        plt.legend()
+        plt.show()
+
     """ Helper function. """
     def plot_loss(self, train_loss, valid_loss):
         # visualize the loss as the network trained
@@ -26,7 +36,7 @@ class Visualizer(object):
         minposs = valid_loss.index(min(valid_loss)) + 1 
         plt.axvline(minposs, linestyle='--', color='r',label='Early Stopping Checkpoint')
 
-        plt.xlabel('epochs')
+        plt.xlabel('time')
         plt.ylabel('loss')
         plt.xlim(0, len(train_loss)+1) # consistent scale
         plt.grid(True)
