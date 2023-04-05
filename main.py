@@ -4,7 +4,7 @@ import torch
 import argparse
 import configparser
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 
 from solver import Solver
 from HttpRequest import HTTPRequest
@@ -26,7 +26,7 @@ def get_args():
     ###################################################################
     parser.add_argument('--download_data', action='store_true', #default=True,
                         help='starts an ablation study')
-    parser.add_argument('--train_model', action='store_true', #default=True,
+    parser.add_argument('--train_model', action='store_true', default=True,
                         help='starts an ablation study')
     parser.add_argument('--plot_data', action='store_true', #default=True,
                         help='starts an ablation study')
@@ -50,17 +50,17 @@ def get_args():
 
     # network-training
     ###################################################################
-    parser.add_argument('--epochs', type=int, default=1000,
+    parser.add_argument('--epochs', type=int, default=100,
                         help='number of epochs')
-    parser.add_argument('--bs_train', type=int, default=16,
+    parser.add_argument('--bs_train', type=int, default=64,
                         help='number of elements in training batch')
-    parser.add_argument('--bs_test', type=int, default=16,
+    parser.add_argument('--bs_test', type=int, default=64,
                         help='number of elements in test batch')
     parser.add_argument('--workers', type=int, default=2,
                         help='number of workers in dataloader')
-    parser.add_argument('--early_stopping', type=int, default=7,
+    parser.add_argument('--early_stopping', type=int, default=5,
                     help='early stopping epoch treshold (patience)')
-    parser.add_argument('--lr', type=float, default=0.0001,
+    parser.add_argument('--lr', type=float, default=0.001,
                         help='learning rate')
     parser.add_argument('--opt', type=str, default='Adam', 
                         choices=['SGD', 'Adam'], 
@@ -71,9 +71,9 @@ def get_args():
 
     # network-architecture parameters
     ###################################################################
-    parser.add_argument('--seq_len', type=int, default=60,
+    parser.add_argument('--seq_len', type=int, default=20, # 60,
                         help='number of epochs')
-    parser.add_argument('--hidden_size', type=int, default=128, #2,
+    parser.add_argument('--hidden_size', type=int, default=32, #128,
                         help='number of elements in training batch')
     parser.add_argument('--num_layers', type=int, default=2,
                         help='number of stackd LSTM layers')
@@ -83,7 +83,7 @@ def get_args():
 
     # output-threshold
     ###################################################################
-    parser.add_argument('--print_every', type=int, default=3000,
+    parser.add_argument('--print_every', type=int, default=100,
                         help='print losses every N iteration')
     ###################################################################
 
@@ -96,7 +96,7 @@ def main(args):
     print('\nExectuion of main function...')
 
     if args.download_data == True:
-        print('\nDownload data...')
+        print('\nDownload data...\n')
 
         ########################## CONFIG-INFO ##########################
         config = configparser.ConfigParser()
@@ -119,9 +119,8 @@ def main(args):
         if request_type == 'kline':
             last_datetime = config['LASTDATETIME']['last_datetime']
             datetime_object = datetime.strptime(last_datetime, '%Y/%m/%d %H:%M:%S')
-            t = int(datetime.timestamp(datetime_object) * 1000)
-            print(t)
-
+            datetime_object = datetime_object.replace(tzinfo=timezone.utc)
+           
             # define the query parameters for the API request
             params = {
                 'symbol': symbol,
@@ -176,7 +175,8 @@ def main(args):
         
         df = pd.read_csv('./data/market-data.csv', index_col='date', parse_dates=True)
 
-        df.drop(['symbol', 'interval', 'open_time', 'turnover'], inplace=True, axis=1)
+        # df.drop(['symbol', 'interval', 'open_time', 'turnover'], inplace=True, axis=1)
+        df.drop(['start'], inplace=True, axis=1)
 
         columns_titles = ['open', 'high', 'low', 'volume', 'close']
         df = df.reindex(columns=columns_titles)
@@ -189,15 +189,16 @@ def main(args):
         input_size = X.shape[1]
         ###########################
 
-        # # data-visualization
-        # ######################################################
-        # vz = Visualizer()
-        # train_size = int((len(df) * args.split_perc))
-        # vz.plot_data(df.iloc[:train_size, :], 'training-data')
-        # vz.plot_data(df.iloc[train_size:, :], 'test-data')
-        # vz.plot_pca(df.iloc[:train_size, :], 'training-data')
-        # vz.plot_pca(df.iloc[train_size:, :], 'test-data')
-        # ######################################################
+        """ # data-visualization
+        ######################################################
+        vz = Visualizer()
+        train_size = int((len(df) * args.split_perc))
+        vz.plot_data(df.iloc[:train_size, :], 'training-data')
+        vz.plot_data(df.iloc[train_size:, :], 'test-data')
+        vz.plot_pca(df.iloc[:train_size, :], 'training-data')
+        vz.plot_pca(df.iloc[train_size:, :], 'test-data')
+        ######################################################
+        """
 
         data_timeseries = True
 

@@ -19,13 +19,8 @@ class KlineRequest(HTTPRequest):
 
     """ Helper function used to obtain candles data. """
     def get_bybit_bars(self, startTime, endTime):
-
-        print(f'debugg: {startTime}')
-
         startTime = int(datetime.timestamp(startTime) * 1000)
-        endTime = int(datetime.timestamp(endTime)*1000)
-
-        print(f'debug: {startTime}, {endTime}')
+        endTime = int(datetime.timestamp(endTime) * 1000)
 
         self.params = {
             'symbol': self.symbol,
@@ -35,34 +30,39 @@ class KlineRequest(HTTPRequest):
         }
 
         response = self.HTTP_Request()
-        print(response.text)
+        # print(response.text)
+        json_response = json.loads(response.text)['result']
+
+        if 'list' in json_response:        
+            df = pd.DataFrame(json_response['list'], 
+                              columns=['start', 'open', 'high', 'low', 'close'])
+
+            # if (len(df.index) == 0):
+            #     print('\nNone information...\n')
+            #     return None
+            
+            df.index = [datetime.fromtimestamp(int(x) / 1000) for x in df.start]
+
+            return df
         
-        df = pd.DataFrame(json.loads(response.text)['result']['list'], columns=['start', 'open', 'high', 'low', 'close'])
-
-        print(df)
-        a = input('...')
-
-        if (len(df.index) == 0):
-            print('\nNone information...\n')
+        else:
             return None
-
-        df.index = [datetime.fromtimestamp(int(x)) for x in df.start]
-
-        return df
 
     """ Helper function used to obtain a dataframe
         containing cndles market data. """
     def get_kline_bybit(self):
         df_list = []
         last_datetime = self.startTime
+
         while True:
-            print(last_datetime)
+            print(f'last-datetime: {last_datetime}')
             new_df = self.get_bybit_bars(last_datetime, datetime.now())
             if new_df is None:
                 break
             df_list.append(new_df)
             last_datetime = max(new_df.index) + timedelta(0, 1)
-            print(f'index: {last_datetime}')
+            print(f'max(new_df.index): {max(new_df.index)}')
+            print(f'updated-last-datetime: {last_datetime}')
 
         df = pd.concat(df_list)
         
