@@ -6,7 +6,6 @@ class Visualizer(object):
     """ Initialize configurations. """
     def __init__(self):
         pass
-
     """ Helper function. """
     def plot_data(self, data, t):               
         # create a line plot using Plotly
@@ -16,14 +15,15 @@ class Visualizer(object):
         fig.show()
 
     def plot_predictions(self, y_true, predictions, t):
-        plt.figure(figsize=(10, 5))
+        fig = plt.figure(figsize=(10, 5))
         plt.plot(y_true, label='Actual Price')
         plt.plot(predictions, label='Predicted Price')
         plt.title('Actual vs. Predicted Price (' + t + ')')
         plt.xlabel('Date')
         plt.ylabel('Price ($)')
         plt.legend()
-        plt.show()
+        # plt.show()
+        fig.savefig('./data/pred_plot_' + t + '.png', bbox_inches='tight')
 
     """ Helper function. """
     def plot_loss(self, train_loss, valid_loss):
@@ -42,7 +42,7 @@ class Visualizer(object):
         plt.grid(True)
         plt.legend()
         plt.tight_layout()
-        plt.show()
+        # plt.show()
         fig.savefig('./data/loss_plot.png', bbox_inches='tight')
 
     """ Helper function. """

@@ -4,7 +4,7 @@ import torch
 import argparse
 import configparser
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 
 from solver import Solver
 from HttpRequest import HTTPRequest
@@ -50,11 +50,11 @@ def get_args():
 
     # network-training
     ###################################################################
-    parser.add_argument('--epochs', type=int, default=1000,
+    parser.add_argument('--epochs', type=int, default=100,
                         help='number of epochs')
-    parser.add_argument('--bs_train', type=int, default=16,
+    parser.add_argument('--bs_train', type=int, default=64,
                         help='number of elements in training batch')
-    parser.add_argument('--bs_test', type=int, default=16,
+    parser.add_argument('--bs_test', type=int, default=64,
                         help='number of elements in test batch')
     parser.add_argument('--workers', type=int, default=2,
                         help='number of workers in dataloader')
@@ -71,11 +71,11 @@ def get_args():
 
     # network-architecture parameters
     ###################################################################
-    parser.add_argument('--seq_len', type=int, default=60,
+    parser.add_argument('--seq_len', type=int, default=10, # 60,
                         help='number of epochs')
-    parser.add_argument('--hidden_size', type=int, default=128, #2,
+    parser.add_argument('--hidden_size', type=int, default=128,
                         help='number of elements in training batch')
-    parser.add_argument('--num_layers', type=int, default=2,
+    parser.add_argument('--num_layers', type=int, default=2, #2,
                         help='number of stackd LSTM layers')
     parser.add_argument('--output_size', type=int, default=1,
                         help='number of workers in data loader')
@@ -83,7 +83,7 @@ def get_args():
 
     # output-threshold
     ###################################################################
-    parser.add_argument('--print_every', type=int, default=3000,
+    parser.add_argument('--print_every', type=int, default=9,
                         help='print losses every N iteration')
     ###################################################################
 
@@ -96,7 +96,7 @@ def main(args):
     print('\nExectuion of main function...')
 
     if args.download_data == True:
-        print('\nDownload data...')
+        print('\nDownload data...\n')
 
         ########################## CONFIG-INFO ##########################
         config = configparser.ConfigParser()
@@ -118,14 +118,15 @@ def main(args):
 
         if request_type == 'kline':
             last_datetime = config['LASTDATETIME']['last_datetime']
-            datetime_object = datetime.strptime(last_datetime, '%d/%m/%y %H:%M:%S')
-
+            datetime_object = datetime.strptime(last_datetime, '%Y/%m/%d %H:%M:%S')
+            datetime_object = datetime_object.replace(tzinfo=timezone.utc)
+           
             # define the query parameters for the API request
             params = {
                 'symbol': symbol,
                 'interval': interval,
-                'from': None,
-                'to': None
+                'start': None,
+                'end': None
             }
 
             httpreq = KlineRequest(symbol, interval, datetime_object, url, endpoint, 
@@ -162,8 +163,8 @@ def main(args):
             df = pd.DataFrame(data, columns=['A', 'B', 'C', 'D', 'E'], dtype=float)
 
             # print some info
-            print(f'\nDataframe shape: {df.shape}')
-            print(f'\n{df.head()}\n')
+            print(f'\nDataFrame shape: {df.shape}')
+            print(f'\nDataFrame head:\n {df.head()}\n')
 
             # # convert the pandas object to a tensor
             # data = tf.convert_to_tensor(df)
@@ -173,11 +174,7 @@ def main(args):
         print('\nTraining/Prediction...')
         
         df = pd.read_csv('./data/market-data.csv', index_col='date', parse_dates=True)
-
-        df.drop(['symbol', 'interval', 'open_time', 'turnover'], inplace=True, axis=1)
-
-        columns_titles = ['open', 'high', 'low', 'volume', 'close']
-        df = df.reindex(columns=columns_titles)
+        df.drop(['start'], inplace=True, axis=1)
 
         X = df.iloc[:, :-1]
         y = df.iloc[:, -1:]
@@ -187,15 +184,16 @@ def main(args):
         input_size = X.shape[1]
         ###########################
 
-        # # data-visualization
-        # ######################################################
-        # vz = Visualizer()
-        # train_size = int((len(df) * args.split_perc))
-        # vz.plot_data(df.iloc[:train_size, :], 'training-data')
-        # vz.plot_data(df.iloc[train_size:, :], 'test-data')
-        # vz.plot_pca(df.iloc[:train_size, :], 'training-data')
-        # vz.plot_pca(df.iloc[train_size:, :], 'test-data')
-        # ######################################################
+        """ # data-visualization
+        ######################################################
+        vz = Visualizer()
+        train_size = int((len(df) * args.split_perc))
+        vz.plot_data(df.iloc[:train_size, :], 'training-data')
+        vz.plot_data(df.iloc[train_size:, :], 'test-data')
+        vz.plot_pca(df.iloc[:train_size, :], 'training-data')
+        vz.plot_pca(df.iloc[train_size:, :], 'test-data')
+        ######################################################
+        """
 
         data_timeseries = True
 
@@ -212,8 +210,8 @@ def main(args):
             # args.print_every = 1 # if max_batch_sz=True
             train_dataloader, val_dataloader, test_dataloader = tspdl.get_dataloaders()
 
-        """ dataloader-debugging
-        for _, (X, y) in enumerate(test_dataloader):
+        """ # dataloader-debugging
+        for _, (X, y) in enumerate(train_dataloader):
             print(X)
             print(y)
             a = input('...') 
@@ -311,7 +309,7 @@ def main(args):
             solver.train()
         elif args.make_prediction == True:
             args.resume_train = True
-            solver.make_prediction()
+            solver.make_prediction(X)
 
     elif args.plot_data == True:
         print('\nPlotting data...')
