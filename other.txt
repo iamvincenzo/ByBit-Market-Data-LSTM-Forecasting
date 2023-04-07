@@ -1,3 +1,0 @@
-https://github.com/JordiCorbilla/stock-prediction-deep-neural-learning
-
-https://github.com/jinglescode/time-series-forecasting-pytorch
