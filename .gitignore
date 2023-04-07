@@ -134,4 +134,6 @@ model_save/
 
 download_market_data/market_config_files/api_config.cfg
 
+np_lib_stride_tricks_as_strided.ipynb
+
 old/
