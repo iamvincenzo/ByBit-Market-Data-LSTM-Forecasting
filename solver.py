@@ -42,7 +42,7 @@ class Solver(object):
             print('%-32s %s' % (name, tuple(p.shape)))
 
         # load a pretrained model
-        if self.args.resume_train == True:
+        if self.args.resume_train == True or self.args.make_prediction == True:
             self.load_model(device)
         
         # Loss definition
@@ -101,7 +101,7 @@ class Solver(object):
 
             loop = tqdm(enumerate(self.train_dataloader),
                         total=len(self.train_dataloader), leave=True)
-            
+                        
             for batch_idx, (X_batch, y_batch) in loop:
                 X_batch = X_batch.to(self.device)
                 y_batch = y_batch.to(self.device) 
@@ -173,7 +173,7 @@ class Solver(object):
             self.save_model()  
         
         print('\nTraining finished...')
-        self.plot_results(avg_train_losses, avg_test_losses, train_y_trues, train_preds) # ???
+        # self.plot_results(avg_train_losses, avg_test_losses, train_y_trues, train_preds) # ???
                     
     """ Evaluation of the model. """
     def test(self, test_losses):
@@ -252,5 +252,6 @@ class Solver(object):
         self.vz.plot_predictions(y_trues, predictions, 'training')
 
     """ Helper function to do. """
-    def make_prediction(self):
-        pass
+    def make_prediction(self, X):
+        
+        print(X)
