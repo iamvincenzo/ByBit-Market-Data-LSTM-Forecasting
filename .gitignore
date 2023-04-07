@@ -132,6 +132,6 @@ data/
 
 model_save/
 
-temp.py
+download_market_data/market_config_files/api_config.cfg
 
-api_config.cfg
+old/

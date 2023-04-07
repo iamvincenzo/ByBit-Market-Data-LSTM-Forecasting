@@ -1,0 +1,42 @@
+Ci sono diverse metriche che si possono utilizzare per valutare le predizioni sui closing price con una rete LSTM in PyTorch. Ecco alcune delle metriche più comuni:
+
+Mean Squared Error (MSE): misura la media degli errori quadrati tra le previsioni del modello e i valori target. Questa metrica penalizza gli errori più grandi, quindi è molto sensibile alle predizioni sbagliate. Può essere calcolato utilizzando la funzione nn.MSELoss() in PyTorch.
+python
+
+Copy code
+criterion = nn.MSELoss()
+loss = criterion(output, y)
+metric = torch.sqrt(loss).item()
+
+Mean Absolute Error (MAE): calcola la media degli errori assoluti tra le previsioni del modello e i valori target. Questa metrica è meno sensibile agli errori più grandi rispetto alla MSE. Può essere calcolato utilizzando la funzione nn.L1Loss() in PyTorch.
+python
+
+Copy code
+
+criterion = nn.L1Loss()
+loss = criterion(output, y)
+metric = loss.item()
+
+Coefficient of Determination (R^2): misura la proporzione della varianza nei valori target che può essere spiegata dalle previsioni del modello. Questa metrica indica quanto le previsioni del modello si adattano ai dati reali. Può essere calcolato utilizzando la libreria scikit-learn.
+python
+
+Copy code
+
+from sklearn.metrics import r2_score
+
+y_pred = output.detach().numpy()
+y_true = y.numpy()
+metric = r2_score(y_true, y_pred)
+
+Directional Accuracy (DA): misura la percentuale di volte in cui il modello ha previsto correttamente la direzione dei movimenti dei prezzi (aumento o diminuzione). Questa metrica è utile se l'obiettivo principale è prevedere la direzione del mercato. Può essere calcolato utilizzando la seguente funzione:
+python
+
+Copy code
+
+def directional_accuracy(y_true, y_pred):
+    y_true_direction = torch.sign(y_true[1:] - y_true[:-1])
+    y_pred_direction = torch.sign(y_pred[1:] - y_pred[:-1])
+    correct = torch.sum(y_true_direction == y_pred_direction)
+    return correct.item() / (y_true_direction.shape[0] + 1e-8)
+
+Queste sono solo alcune delle metriche che si possono utilizzare per valutare le predizioni dei prezzi di chiusura con una rete LSTM. La scelta della metrica dipende dall'obiettivo del modello e dal tipo di dati su cui si sta lavorando.
