@@ -56,20 +56,20 @@ def main():
     ######################################################
     """
 
-    data_timeseries = True
+    data_timeseries = False
 
     if data_timeseries == False:
         getData = GetDataloader(X=X, y=y, bs_train=bs_train, bs_test=bs_test, 
                                 max_batch_sz=False, workers=workers, 
                                 seq_len=seq_len, split_perc=split_perc)
         # args.print_every = 1 # if max_batch_sz=True
-        train_dataloader, val_dataloader = getData.get_dataloaders()
+        train_dataloader, val_dataloader, mm = getData.get_dataloaders()
         test_dataloader = None
     else:
         tspdl = TimeSeriesSplitDataloader(X=X, y=y, seq_len=seq_len, max_batch_sz=False, 
                                             batch_size=bs_train, val_test_split=0.5)
         # args.print_every = 1 # if max_batch_sz=True
-        train_dataloader, val_dataloader, test_dataloader = tspdl.get_dataloaders()
+        train_dataloader, val_dataloader, test_dataloader, mm = tspdl.get_dataloaders()
 
     """ # dataloader-debugging
     for _, (X, y) in enumerate(train_dataloader):
@@ -85,6 +85,7 @@ def main():
     # define solver class
     solver = Solver(device=device, 
                     input_size=input_size, 
+                    minmaxscaler=mm,
                     train_dataloader=train_dataloader, 
                     val_dataloader=val_dataloader,
                     test_dataloader=test_dataloader)
@@ -92,9 +93,7 @@ def main():
     if make_prediction == 1:
         solver.make_prediction(X)
     else:
-        solver.train() 
-        
-
+        solver.train()
 
 if __name__ == '__main__':   
     main()

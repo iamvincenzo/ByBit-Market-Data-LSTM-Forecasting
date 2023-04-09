@@ -85,7 +85,7 @@ class GetDataloader(object):
                                      num_workers=self.workers, shuffle=False)
        
         
-        return train_dataloader, test_dataloader
+        return train_dataloader, test_dataloader, mm
 
 
 class TimeSeriesSplitDataloader(object):
@@ -152,6 +152,6 @@ class TimeSeriesSplitDataloader(object):
         val_dataloader = DataLoader(crypto_val_data, batch_size=self.batch_size, shuffle=False)
         test_dataloader = DataLoader(crypto_test_data, batch_size=self.batch_size, shuffle=False)
 
-        return train_dataloader, val_dataloader, test_dataloader
+        return train_dataloader, val_dataloader, test_dataloader, mm
 
         

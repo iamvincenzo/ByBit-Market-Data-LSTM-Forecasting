@@ -15,7 +15,7 @@ conf_path = './model_config_files/'
 
 class Solver(object):
     """ Initialize configurations. """
-    def __init__(self, device, input_size, train_dataloader, val_dataloader, test_dataloader=None):
+    def __init__(self, device, input_size, minmaxscaler, train_dataloader, val_dataloader, test_dataloader=None):
         super(Solver, self).__init__()
         ################### READING PARAMETERS ####################
         config = configparser.ConfigParser()
@@ -45,6 +45,8 @@ class Solver(object):
         self.train_dataloader = train_dataloader
         self.val_dataloader= val_dataloader
         self.test_dataloader = test_dataloader
+
+        self.mm = minmaxscaler
 
         self.vz = Visualizer()
 
@@ -102,7 +104,7 @@ class Solver(object):
 
     """ Training function. """
     def train(self):
-        print('\nStarting the training...')
+        print('\nStarting the training...\n')
 
         avg_train_losses = []
         avg_test_losses = []
@@ -122,6 +124,7 @@ class Solver(object):
             # record the training and test losses for each batch in this epoch
             train_losses = []
             test_losses = []
+            metrics = []
 
             loop = tqdm(enumerate(self.train_dataloader),
                         total=len(self.train_dataloader), leave=True)
@@ -152,18 +155,20 @@ class Solver(object):
         
                 if batch_idx % self.print_every == self.print_every - 1:                    
                     # used to check model improvement
-                    self.test(test_losses)
+                    self.test(test_losses, metrics)
 
                     batch_avg_train_loss = np.average(train_losses)
                     batch_avg_test_loss = np.average(test_losses)
+                    batch_avg_metric = np.average(metrics)
 
                     avg_train_losses.append(batch_avg_train_loss)
                     avg_test_losses.append(batch_avg_test_loss)
 
-                    print(f'\nEpoch: {epoch + 1}/{self.epochs}, ' + 
-                          f'Batch: {batch_idx + 1}/{len(self.train_dataloader)}, ' +
-                          f'train-loss: {batch_avg_train_loss:.4f}, ' +
-                          f'test-loss: {batch_avg_test_loss:.4f}')
+                    print(f'\n\nEpoch: {epoch + 1}/{self.epochs}, ' 
+                          f'Batch: {batch_idx + 1}/{len(self.train_dataloader)}, '
+                          f'train-loss: {batch_avg_train_loss:.4f}, '
+                          f'test-loss: {batch_avg_test_loss:.4f}, '
+                          f'metrics: {batch_avg_metric}')
                     
                     self.plot_results(avg_train_losses, avg_test_losses, train_y_trues, train_preds)
                     
@@ -171,6 +176,7 @@ class Solver(object):
 
                     train_losses = []
                     test_losses = []
+                    metrics = []
 
                     # early_stopping needs the validation loss to check if it has decresed, 
                     # and if it has, it will make a checkpoint of the current model
@@ -180,9 +186,9 @@ class Solver(object):
                     if self.test_dataloader is not None:
                          eval_loss, eval_metric = self.evaluate_on_test_set()
                          
-                         print(f'\nEpoch: {epoch + 1}/{self.epochs}, ' + 
-                               f'Batch: {batch_idx + 1}/{len(self.train_dataloader)}, ' +
-                               f'eval_loss: {eval_loss:.4f}, ' +
+                         print(f'\n\nEpoch: {epoch + 1}/{self.epochs}, '
+                               f'Batch: {batch_idx + 1}/{len(self.train_dataloader)}, '
+                               f'eval_loss: {eval_loss:.4f}, '
                                f'eval_metric: {eval_metric:.4f}')
 
                     if early_stopping.early_stop:
@@ -196,12 +202,12 @@ class Solver(object):
             # save at the end of each epoch only if earlystopping = False
             self.save_model()  
         
-        print('\nTraining finished...')
+        print('\n\nTraining finished...')
         # self.plot_results(avg_train_losses, avg_test_losses, train_y_trues, train_preds) # ???
                     
     """ Evaluation of the model. """
-    def test(self, test_losses):
-        print('\nStarting the validation...')
+    def test(self, test_losses, metrics):
+        print('\n\nStarting the validation...\n')
 
         val_y_trues = np.array([], dtype=np.float64)
         val_preds = np.array([], dtype=np.float64)
@@ -221,16 +227,19 @@ class Solver(object):
                 val_preds = np.concatenate((y_test_pred.detach().numpy(), val_preds), axis=None)
 
                 test_loss = self.criterion(y_test_pred, y_test)     
+                metric = torch.sqrt(test_loss)
 
                 test_losses.append(test_loss.item())
+                metrics.append(metric.item())
 
-            self.vz.plot_predictions(val_y_trues, val_preds, 'validation')           
+            self.vz.plot_predictions(self.mm.inverse_transform(val_y_trues.reshape(-1, 1)), 
+                                     self.mm.inverse_transform(val_preds.reshape(-1, 1)), 'validation')           
     
         self.model.train()  # put again the model in trainining-mode
 
     """ Helper function used to evaluate the model in test set. """
     def evaluate_on_test_set(self):
-        print('\nEvaluation on test set...')
+        print('\n\nEvaluation on test set...\n')
 
         eval_y_trues = np.array([], dtype=np.float64)
         eval_preds = np.array([], dtype=np.float64)
@@ -249,6 +258,8 @@ class Solver(object):
                 y_eval = y_eval.to(self.device)
                 y_eval_pred = self.model(X_eval.detach())
 
+                # self.compute_confidence(y_eval_pred)
+
                 eval_y_trues = np.concatenate((y_eval.detach().numpy(), eval_y_trues), axis=None)
                 eval_preds = np.concatenate((y_eval_pred.detach().numpy(), eval_preds), axis=None)
 
@@ -261,7 +272,8 @@ class Solver(object):
             avg_loss = np.average(eval_losses)
             avg_metric = np.average(metrics)
 
-            self.vz.plot_predictions(eval_y_trues, eval_preds, 'evaluation')
+            self.vz.plot_predictions(self.mm.inverse_transform(eval_y_trues.reshape(-1, 1)), 
+                                     self.mm.inverse_transform(eval_preds.reshape(-1, 1)), 'evaluation')
         
         self.model.train()
 
@@ -273,7 +285,19 @@ class Solver(object):
 
         self.vz.plot_loss(avg_train_losses, avg_test_losses)
 
-        self.vz.plot_predictions(y_trues, predictions, 'training')
+        self.vz.plot_predictions(self.mm.inverse_transform(y_trues.reshape(-1, 1)), 
+                                 self.mm.inverse_transform(predictions.reshape(-1, 1)), 'training')
+
+
+    def compute_confidence(self, model_output):
+        # Calcolo dell'intervallo di confidenza del 95%
+        lower_bound = torch.quantile(model_output, 0.025, dim=0)
+        upper_bound = torch.quantile(model_output, 0.975, dim=0)
+
+        print("\nLower bound:", lower_bound.item()) # Stampa il valore inferiore dell'intervallo
+        print("Upper bound:", upper_bound.item()) # Stampa il valore superiore dell'intervallo
+
+        # return lower_bound, upper_bound
 
     """ Helper function to do. """
     def make_prediction(self, X):
