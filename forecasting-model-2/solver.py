@@ -3,6 +3,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 
 from model_cfg import config
+from PlottingUtils import Visualizer
 
 class Solver():
     """ Initialize configuration. """
@@ -26,17 +27,19 @@ class Solver():
         self.scheduler = optim.lr_scheduler.StepLR(self.optimizer, step_size=scheduler_step_size, 
                                                    gamma=0.1)
         
+        self.vz = Visualizer()
+        
     def run_epoch(self, epoch, is_training=False):
         epoch_loss = 0
 
         if is_training:
             print(f'\nTraining iteration | '
-                  f'Epoch[{epoch}/{self.num_epoch}]\n')
+                  f'Epoch[{epoch + 1}/{self.num_epoch}]\n')
             self.model.train()
             dataloader = self.train_dataloader
         else:
             print(f'\nEvaluation iteration | ' 
-                  f'Epoch [{epoch}/{self.num_epoch}]\n')
+                  f'Epoch [{epoch + 1}/{self.num_epoch}]\n')
             self.model.eval()
             dataloader = self.val_dataloader
 
@@ -103,6 +106,8 @@ class Solver():
         return epoch_loss, lr
 
     def train_eval(self):
+        train_losses = []
+        val_losses = []
         for epoch in range(self.num_epoch):
             loss_train, lr_train = self.run_epoch(epoch, is_training=True)
             loss_val, lr_val = self.run_epoch(epoch)
@@ -110,6 +115,11 @@ class Solver():
 
             print('\nEpoch[{}/{}] | loss train:{:.6f}, test:{:.6f} | lr:{:.6f}'
                 .format(epoch + 1, self.num_epoch, loss_train, loss_val, lr_train))
+
+            train_losses.append(loss_train)
+            val_losses.append(loss_val)
+            
+        self.vz.plot_loss(train_losses, val_losses)
 
     def make_pred(self):
         pass

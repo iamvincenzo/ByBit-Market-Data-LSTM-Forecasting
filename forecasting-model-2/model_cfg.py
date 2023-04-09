@@ -1,7 +1,7 @@
 """ Config informations. """
 config = {
     'data': {
-        'window_size': 60,
+        'window_size': 20, #60,
         'train_split_size': 0.80,
         'path': '../data/market-data.csv',
         'symbol': 'ETHUSDT',
@@ -24,8 +24,10 @@ config = {
         'dropout': 0.2,
     },
     'training': {
-        'device': 'cpu',  # 'cuda' or 'cpu'
+        'device': 'cpu', #'cuda'
         'batch_size': 64,
+        'bs_train': 4,
+        'bs_test': 1,
         'num_epoch': 100,
         'learning_rate': 0.001,
         'scheduler_step_size': 40,
