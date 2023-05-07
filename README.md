@@ -4,10 +4,17 @@ This project aims to use LSTM networks to predict the next closing price of orde
 
 Note that the model is built for exercise purposes only, as predicting cryptocurrency prices is a much more complex task. To achieve more accurate predictions, additional models like Natural Language Processing (NLP) techniques such as sentiment analysis, text classification, and topic modeling are required to analyze news and market information.
 
+### Forecasting-model-1 results:
+
 ![Loss functions](./imgs/loss_plot.png)
 
 ![Predictions on validation-set](./imgs/pred_plot_validation.png)
 
+### Forecasting-model-2 results:
+
+![Loss functions](./imgs/f2_loss_plot.png)
+
+![Predictions on validation-set](./imgs/f2_pred.png)
 
 ## Acknowledgments
 
