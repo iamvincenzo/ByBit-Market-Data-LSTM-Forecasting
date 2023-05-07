@@ -1,3 +1,7 @@
+""" This file includes Python code licensed under the MIT License, 
+    Copyright (c) 2018 Bjarte Mehus Sunde. 
+    https://github.com/Bjarten/early-stopping-pytorch. """
+
 import os
 import torch
 import numpy as np
@@ -38,7 +42,7 @@ class Solver(object):
         self.print_every = int(config['TASK']['print_every'])
         ##########################################################
 
-        self.model_name = f'{mod_name}.pth'        
+        self.model_name = f'{mod_name}.pt'        
         
         self.device = device
         self.input_size = input_size
@@ -51,12 +55,6 @@ class Solver(object):
         self.vz = Visualizer()
 
         self.set_seed(42)
-
-        """ from model import LSTM1
-        # Model definition: non va bene con num-layers=4 perchè occorre reshape
-        self.model = LSTM1(self.device, self.args.output_size, self.input_size, 
-                           self.args.hidden_size, self.args.num_layers, self.args.seq_len).to(self.device)
-        """
         
         # Model definition
         self.model = LSTMModel(self.device, self.input_size, hidden_size, 
@@ -82,7 +80,7 @@ class Solver(object):
             self.optimizer = optim.Adam(self.model.parameters(), 
                                         lr=lr, betas=(0.9, 0.999))
 
-    """ Helper function. """
+    """ Helper function used to set random-seed. """
     def set_seed(self, seed=42):
         np.random.seed(seed)
         torch.manual_seed(seed)
@@ -172,8 +170,6 @@ class Solver(object):
                     
                     self.plot_results(avg_train_losses, avg_test_losses, train_y_trues, train_preds)
                     
-                    # print(f'\nGloabl-step: {epoch * len(self.train_dataloader) + batch_idx}')
-
                     train_losses = []
                     test_losses = []
                     metrics = []
@@ -201,9 +197,8 @@ class Solver(object):
 
             # save at the end of each epoch only if earlystopping = False
             self.save_model()  
-        
+
         print('\n\nTraining finished...')
-        # self.plot_results(avg_train_losses, avg_test_losses, train_y_trues, train_preds) # ???
                     
     """ Evaluation of the model. """
     def test(self, test_losses, metrics):
@@ -212,8 +207,10 @@ class Solver(object):
         val_y_trues = np.array([], dtype=np.float64)
         val_preds = np.array([], dtype=np.float64)
 
-        self.model.eval()  # put net into evaluation mode
-        # since we're not training, we don't need to calculate the gradients for our outputs
+        # put net into evaluation mode
+        self.model.eval()  
+        
+        # no need to calculate the gradients for our outputs
         with torch.no_grad():
             test_loop = tqdm(enumerate(self.val_dataloader),
                              total=len(self.val_dataloader), leave=True)
@@ -223,8 +220,10 @@ class Solver(object):
                 y_test = y_test.to(self.device)
                 y_test_pred = self.model(X_test.detach())
 
-                val_y_trues = np.concatenate((y_test.detach().numpy(), val_y_trues), axis=None)
-                val_preds = np.concatenate((y_test_pred.detach().numpy(), val_preds), axis=None)
+                val_y_trues = np.concatenate((y_test.detach().numpy(), 
+                                              val_y_trues), axis=None)
+                val_preds = np.concatenate((y_test_pred.detach().numpy(), 
+                                            val_preds), axis=None)
 
                 test_loss = self.criterion(y_test_pred, y_test)     
                 metric = torch.sqrt(test_loss)
@@ -233,9 +232,11 @@ class Solver(object):
                 metrics.append(metric.item())
 
             self.vz.plot_predictions(self.mm.inverse_transform(val_y_trues.reshape(-1, 1)), 
-                                     self.mm.inverse_transform(val_preds.reshape(-1, 1)), 'validation')           
-    
-        self.model.train()  # put again the model in trainining-mode
+                                     self.mm.inverse_transform(val_preds.reshape(-1, 1)), 
+                                     'validation')           
+        
+        # put again the model in trainining-mode
+        self.model.train()  
 
     """ Helper function used to evaluate the model in test set. """
     def evaluate_on_test_set(self):
@@ -273,7 +274,8 @@ class Solver(object):
             avg_metric = np.average(metrics)
 
             self.vz.plot_predictions(self.mm.inverse_transform(eval_y_trues.reshape(-1, 1)), 
-                                     self.mm.inverse_transform(eval_preds.reshape(-1, 1)), 'evaluation')
+                                     self.mm.inverse_transform(eval_preds.reshape(-1, 1)), 
+                                     'evaluation')
         
         self.model.train()
 
@@ -286,9 +288,11 @@ class Solver(object):
         self.vz.plot_loss(avg_train_losses, avg_test_losses)
 
         self.vz.plot_predictions(self.mm.inverse_transform(y_trues.reshape(-1, 1)), 
-                                 self.mm.inverse_transform(predictions.reshape(-1, 1)), 'training')
+                                 self.mm.inverse_transform(predictions.reshape(-1, 1)), 
+                                 'training')
 
-
+    """ Helper function used to compute the confidence 
+        interval of model's prediction. """
     def compute_confidence(self, model_output):
         # Calcolo dell'intervallo di confidenza del 95%
         lower_bound = torch.quantile(model_output, 0.025, dim=0)
@@ -301,5 +305,5 @@ class Solver(object):
 
     """ Helper function to do. """
     def make_prediction(self, X):
+        pass
         
-        print(X)

@@ -153,5 +153,4 @@ class TimeSeriesSplitDataloader(object):
         test_dataloader = DataLoader(crypto_test_data, batch_size=self.batch_size, shuffle=False)
 
         return train_dataloader, val_dataloader, test_dataloader, mm
-
         
