@@ -1,3 +1,7 @@
+""" This file includes Python code licensed under the Apache License 2.0, 
+    Copyright (c) 2021 Hong Jing. 
+    https://github.com/jinglescode/time-series-forecasting-pytorch. """
+
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F

@@ -1,6 +1,7 @@
 import numpy as np
 from model_cfg import config
 from torch.utils.data import Dataset
+import matplotlib.pyplot as plt
 
 class TimeSeriesDataset(Dataset):
     """ Initialize configurations. """
@@ -78,7 +79,7 @@ class TimeSeriesPreparation():
         y_train = y_windowed[:split_index]
         y_val = y_windowed[split_index:]
 
-        # num_data_points = len(X_train) + len(X_val) + len (X_final_pred)
+        num_data_points = len(X_train) + len(X_val) + len (X_final_pred)
 
         # if config['plots']['show_plots']:
         #     to_plot_data_y_train = np.zeros((num_data_points, 1))
@@ -91,7 +92,7 @@ class TimeSeriesPreparation():
         #     to_plot_data_y_val = np.where(to_plot_data_y_val == 0, None, to_plot_data_y_val)
 
 
-        #     fig = figure(figsize=(25, 5), dpi=80)
+        #     fig = plt.figure(figsize=(25, 5), dpi=80)
         #     fig.patch.set_facecolor((1.0, 1.0, 1.0))
         #     plt.plot(to_plot_data_y_train, label="Prices (train)", color=config["plots"]["color_train"])
         #     plt.plot(to_plot_data_y_val, label="Prices (validation)", color=config["plots"]["color_val"])

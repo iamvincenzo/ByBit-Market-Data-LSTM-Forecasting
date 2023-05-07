@@ -1,3 +1,8 @@
+""" This file includes Python code licensed under the MIT License, 
+    Copyright (c) 2018 Bjarte Mehus Sunde. 
+    https://github.com/Bjarten/early-stopping-pytorch. """
+
+
 import plotly.express as px
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
@@ -6,6 +11,7 @@ class Visualizer(object):
     """ Initialize configurations. """
     def __init__(self):
         pass
+
     """ Helper function. """
     def plot_data(self, data, t):               
         # create a line plot using Plotly
@@ -57,36 +63,3 @@ class Visualizer(object):
         plt.ylabel('PC2')
         plt.title('PCA of ByBit data')
         plt.show()
-
-
-
-    """ Other functions
-    def plot_metric(self):
-        plt.figure(figsize=(10, 5))
-        plt.plot(self.train_metric, label='Training Metric')
-        plt.plot(self.valid_metric, label='Validation Metric')
-        plt.title('Training and Validation Metric')
-        plt.xlabel('Epoch')
-        plt.ylabel('Metric')
-        plt.legend()
-        plt.show()
-
-    def plot_predictions(self):
-        plt.figure(figsize=(10, 5))
-        plt.plot(self.valid_data['Close'], label='Actual Price')
-        plt.plot(self.predictions, label='Predicted Price')
-        plt.title('Actual vs. Predicted Price')
-        plt.xlabel('Date')
-        plt.ylabel('Price ($)')
-        plt.legend()
-        plt.show()
-    """
-
-# def __init__(self) #, train_data, valid_data, train_loss, valid_loss): #, train_metric, valid_metric, predictions):
-#         # self.train_data = train_data
-#         # self.valid_data = valid_data
-#         # self.train_loss = train_loss
-#         # self.valid_loss = valid_loss
-#         # self.train_metric = train_metric
-#         # self.valid_metric = valid_metric
-#         # self.predictions = predictions

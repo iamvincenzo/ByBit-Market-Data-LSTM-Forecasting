@@ -1,3 +1,7 @@
+""" This file includes Python code licensed under the Apache License 2.0, 
+    Copyright (c) 2021 Hong Jing. 
+    https://github.com/jinglescode/time-series-forecasting-pytorch. """
+
 """ Config informations. """
 config = {
     'data': {
@@ -28,7 +32,7 @@ config = {
         'batch_size': 64,
         'bs_train': 4,
         'bs_test': 1,
-        'num_epoch': 100,
+        'num_epoch': 20,
         'learning_rate': 0.001,
         'scheduler_step_size': 40,
     }
