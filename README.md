@@ -6,4 +6,4 @@ Note that the model is built for exercise purposes only, as predicting cryptocur
 
 ![Loss functions](./imgs/loss_plot.png)
 
-![Predictions on validation-set](./pred_plot_validation.png)
+![Predictions on validation-set](./imgs/pred_plot_validation.png)
