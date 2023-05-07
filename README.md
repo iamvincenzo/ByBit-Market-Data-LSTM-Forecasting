@@ -7,3 +7,7 @@ Note that the model is built for exercise purposes only, as predicting cryptocur
 ![Loss functions](./imgs/loss_plot.png)
 
 ![Predictions on validation-set](./imgs/pred_plot_validation.png)
+
+Part of this project (forecasting-model-2) uses code with an Apache License 2.0. The full text of the license is available in licences/LICENSE file.
+
+The Apache License 2.0 licensed code is derived from Hong Jing (Jingles) https://github.com/jinglescode/time-series-forecasting-pytorch, and is used in accordance with the terms of the Apache License 2.0.
