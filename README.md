@@ -6,9 +6,9 @@ Note that the model is built for exercise purposes only, as predicting cryptocur
 
 ### Forecasting-model-1 results:
 
-![Loss functions](./imgs/loss_plot.png)
+![Loss functions](./imgs/f1_loss.png)
 
-![Predictions on validation-set](./imgs/pred_plot_validation.png)
+![Predictions on validation-set](./imgs/f1_pred.png)
 
 ### Forecasting-model-2 results:
 
