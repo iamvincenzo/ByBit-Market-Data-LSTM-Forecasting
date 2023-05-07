@@ -19,7 +19,7 @@ class CryptoDataset(Dataset):
             predict a single value, i.e., the next closing price of the cryptocurrency, given a sequence 
             of historical prices. """
         # y = torch.FloatTensor(np.array(self.y_data[index + self.sequence_len - 1]))
-        y = torch.FloatTensor(np.array(self.y_data[index + self.sequence_len])) # non so quale sia corretto
+        y = torch.FloatTensor(np.array(self.y_data[index + self.sequence_len]))
         
         return X, y
 
