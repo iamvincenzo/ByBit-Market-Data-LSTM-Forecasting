@@ -21,16 +21,17 @@ class LSTM1(nn.Module):
     def __init__(self, device, num_classes, input_size, hidden_size, num_layers, seq_length):
         super(LSTM1, self).__init__()
         self.device = device
-        self.num_classes = num_classes #number of classes
-        self.num_layers = num_layers #number of layers
-        self.input_size = input_size #input size
-        self.hidden_size = hidden_size #hidden state
-        self.seq_length = seq_length #sequence length
+        self.num_classes = num_classes # number of classes
+        self.num_layers = num_layers # number of recurrent layers
+        self.input_size = input_size # input size
+        self.hidden_size = hidden_size # hidden state
+        self.seq_length = seq_length # sequence length
 
         self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
-                          num_layers=num_layers, batch_first=True) #lstm
-        self.fc_1 = nn.Linear(hidden_size, 128) #fully connected 1
-        self.fc = nn.Linear(128, num_classes) #fully connected last layer
+                            num_layers=num_layers, batch_first=True) # lstm
+        # because of lstm-out-shape(seq_len, batch_size, hidden_size)
+        self.fc_1 = nn.Linear(hidden_size, 128) # fully connected 1
+        self.fc = nn.Linear(128, num_classes) # fully connected last layer
         self.relu = nn.ReLU()
         self._reinitialize()
 
@@ -58,21 +59,21 @@ class LSTM1(nn.Module):
 
     """ Method used to train the netwrok. """
     def forward(self, x):
-        h_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).to(self.device) #hidden state
-        c_0 = Variable(torch.zeros(self.num_layers, x.size(0), self.hidden_size)).to(self.device) #internal state
+        batch_size = x.size(0)
+        h_0 = Variable(torch.zeros(self.num_layers, batch_size, 
+                                   self.hidden_size)).to(self.device) # hidden state
+        c_0 = Variable(torch.zeros(self.num_layers, batch_size, 
+                                   self.hidden_size)).to(self.device) # internal state
         # Propagate input through LSTM
-        output, (hn, cn) = self.lstm(x, (h_0, c_0)) #lstm with input, hidden, and internal state
-        """ Se seq_length=60, batch_size=1407 e hidden_size=2, allora l'hidden state hn 
-            restituito dalla chiamata self.lstm(x, (h_0, c_0)) avrà una shape di 
-            (num_layers, batch_size, hidden_size) = (1, 1407, 2), dove num_layers è il numero
-            di strati della rete LSTM. La successiva riga di codice, hn = hn.view(-1, self.hidden_size), 
-            riformatta l'hidden state hn in un tensore di shape (batch_size, hidden_size) = (1407, 2) 
-            per essere passato alla fully connected layer. """
+        # lstm with input, hidden, and internal state
+        output, (hn, cn) = self.lstm(x, (h_0, c_0)) 
+
+        # shape [num_layers * batch_size, hidden_size]
         hn = hn.view(-1, self.hidden_size) # reshaping the data for Dense layer next
         out = self.relu(hn)
-        out = self.fc_1(out) #first Dense
-        out = self.relu(out) #relu
-        out = self.fc(out) #Final Output
+        out = self.fc_1(out) # first Dense
+        out = self.relu(out) # relu
+        out = self.fc(out) # Final Output
 
         return out
     
@@ -85,6 +86,7 @@ class LSTMModel(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.lstm = nn.LSTM(input_size, hidden_size, num_layers, batch_first=True)
+        # because of lstm-out-shape(seq_len, batch_size, hidden_size)
         self.fc = nn.Linear(hidden_size, output_size)
         
         self._reinitialize()
@@ -113,15 +115,14 @@ class LSTMModel(nn.Module):
 
     """ Method used to train the netwrok. """    
     def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #? .to(x.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #? .to(x.device)
-        out, _ = self.lstm(x, (h0, c0))
-        """ Se seq_length=60, batch_size=1407, e hidden_size=2, allora la forma dell'output della rete 
-            LSTM sarebbe (1407, 60, 2), poiché abbiamo 1407 sequenze, ognuna di lunghezza 60 e ognuna con 
-            uno hidden state di dimensione 2. Per l'operazione out[:, -1, :], stiamo selezionando solo 
-            l'ultimo timestep per ciascuna sequenza, quindi la forma dell'output sarebbe (1407, 2). 
-            Questo significa che stiamo selezionando l'ultimo hidden state per ciascuna delle 1407 sequenze, 
-            e passando questi 1407 hidden state come input alla fully connected layer. """
+        batch_size = x.size(0)
+        h0 = torch.zeros(self.num_layers, batch_size, 
+                         self.hidden_size).to(self.device)
+        c0 = torch.zeros(self.num_layers, batch_size, 
+                         self.hidden_size).to(self.device)
+        out, (h_n, c_n) = self.lstm(x, (h0, c0))
+        
+        # get from all batches, all columns of the last row
         out = self.fc(out[:, -1, :])
 
         return out
