@@ -88,8 +88,10 @@ class LSTMModel2(nn.Module):
 
     """ Method used to train the netwrok. """    
     def forward(self, x):
-        h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #? .to(x.device)
-        c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(self.device) #? .to(x.device)
+        h0 = torch.zeros(self.num_layers, x.size(0), 
+                         self.hidden_size).to(self.device) #? .to(x.device)
+        c0 = torch.zeros(self.num_layers, x.size(0), 
+                         self.hidden_size).to(self.device) #? .to(x.device)
         out, _ = self.lstm(x, (h0, c0))
         """ Se seq_length=60, batch_size=1407, e hidden_size=2, allora la forma dell'output della rete 
             LSTM sarebbe (1407, 60, 2), poiché abbiamo 1407 sequenze, ognuna di lunghezza 60 e ognuna con 
